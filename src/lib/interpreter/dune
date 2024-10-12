@@ -1,0 +1,7 @@
+(library
+  (name      interpreter)
+  (libraries common lambda))
+
+(menhir   (modules parser) (flags --dump -v))
+(ocamllex (modules lexer))
+
