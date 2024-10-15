@@ -25,9 +25,20 @@ let from_file (f : string) =
 let test t =
   printf "----------------@." ;
   printf "Term        : %s@." (DeBrujin.string_of_term t);
-  printf "Normal Form : %s@." (DeBrujin.string_of_term (DeBrujin.ltr_cbv_norm t));
-  printf "Equa        : %s@." (Type.string_of_equa (Type.gen_equa t (Type.Var "goal")));
-  printf "Type        : %s@." (Type.string_of_ptype (Unification.ptype_of_term t))
+  let t' = DeBrujin.ltr_cbv_norm t in
+  printf "Normal Form : %s@." (DeBrujin.string_of_term t');
+  (* printf "Equa        : %s@." (Type.string_of_equa (Type.gen_equa t (Type.Var "goal"))); *)
+  (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
+  printf "Type        : %s@."
+    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t))
+  (* printf "Type NF     : %s@."
+    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t')) *)
+  (* let sty = 
+    match Unification.ptype_of_term t with
+    | Some ty -> Type.string_of_ptype ty
+    | None    -> "Non typable"
+  in
+  printf "Type        : %s@." sty *)
 
 
 let exec file =

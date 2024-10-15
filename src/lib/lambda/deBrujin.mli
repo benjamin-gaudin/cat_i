@@ -1,6 +1,9 @@
-type pterm = Var of int
+type pterm = Nat of int
+           | Var of int
            | Abs of pterm
            | App of pterm * pterm
+           | Add of pterm * pterm
+           | Mul of pterm * pterm
 
 (* pretty printer *)
 val string_of_term : pterm -> string

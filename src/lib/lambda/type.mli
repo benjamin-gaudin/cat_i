@@ -1,6 +1,7 @@
 open DeBrujin
 
-type ptype = Var of string
+type ptype = Nat
+           | Var of string
            | Arr of ptype * ptype
 
 (* Pretty printer ptype *)

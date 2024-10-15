@@ -1,3 +1,6 @@
+- Parser associativity Add Mul
+
+- function in common to print option type
 - Pretty printer
 
 
