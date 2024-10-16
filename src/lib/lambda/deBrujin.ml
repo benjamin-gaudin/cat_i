@@ -79,11 +79,11 @@ let rec ltr_cbv_step t =
 
 (* Retourne the normal form of a term *)
 let rec ltr_cbv_norm_rec n t =
-  if n > 5000 then failwith "divergent" else (* TODO option *)
+  if n > 5000 then None else (* TODO option *)
     (* fOption (ltr_cbv_norm_rec (n + 1)) t (ltr_cbv_step t) *)
     match ltr_cbv_step t with
     | Some t' -> ltr_cbv_norm_rec (n + 1) t'
-    | None    -> t
+    | None    -> Some t
 
 let ltr_cbv_norm = ltr_cbv_norm_rec 0
 

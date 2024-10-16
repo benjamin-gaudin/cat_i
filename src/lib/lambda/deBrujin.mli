@@ -12,5 +12,5 @@ val string_of_term : pterm -> string
 val subs : pterm -> pterm -> pterm
 
 (* Retourne the normal form of a term *)
-val ltr_cbv_norm : pterm -> pterm
+val ltr_cbv_norm : pterm -> pterm option
 

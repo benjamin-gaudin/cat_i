@@ -26,8 +26,9 @@ let test t =
   printf "----------------@." ;
   printf "Term        : %s@." (DeBrujin.string_of_term t);
   let t' = DeBrujin.ltr_cbv_norm t in
-  printf "Normal Form : %s@." (DeBrujin.string_of_term t');
-  (* printf "Equa        : %s@." (Type.string_of_equa (Type.gen_equa t (Type.Var "goal"))); *)
+  printf "Normal Form : %s@."
+    (Common.Ultils.fOption DeBrujin.string_of_term "Divergent (Timeout)" t');
+  printf "Equa        : %s@." (Type.string_of_equa (Type.gen_equa t (Type.Var "goal")));
   (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
   printf "Type        : %s@."
     (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t))
