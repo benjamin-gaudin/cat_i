@@ -3,10 +3,10 @@
 %}
 
 (* Special characters *)
-%token LPAR RPAR ADD MUL IDI SEMI EOF
+%token LPAR RPAR PLUS STAR IDI SEMI EOF
 
-%left ADD
-%left MUL
+%left PLUS
+%left STAR
 
 (* Operations *)
 %token LAMBDA
@@ -19,13 +19,14 @@
 
 %%
 
+
 (* Expressions ---------------------------------------------------------------*)
 
 term:
-| ap=appTerm          { ap           }
-| t1=term ADD t2=term { Add (t1, t2) }
-| t1=term MUL t2=term { Mul (t1, t2) }
-| LAMBDA t=term       { Abs t        }
+| ap=appTerm           { ap           }
+| LAMBDA t=term        { Abs t        }
+| t1=term PLUS t2=term { Add (t1, t2) }
+| t1=term STAR t2=term { Mul (t1, t2) }
 
 appTerm:
 | t=unitTerm             { t            }

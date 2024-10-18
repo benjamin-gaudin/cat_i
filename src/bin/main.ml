@@ -14,13 +14,9 @@ let from_file (f : string) =
   if (Sys.is_directory f) then raise (Interpreter.Error.E (Input_dir f));
   let c   = open_in f             in
   let lb  = Lexing.from_channel c in
-  let p =
-    (* try   *)
-      Interpreter.Parser.program Interpreter.Lexer.token lb
-    (* with Parser.Error -> raise (E (Parsing_error (Lexing.lexeme lb))) *)
-  in
-  (* ignore (Typer.t_prog p); *)
+  let p = Interpreter.Parser.program Interpreter.Lexer.token lb in
   p
+
 
 let test t =
   printf "----------------@." ;
@@ -28,10 +24,19 @@ let test t =
   let t' = DeBrujin.ltr_cbv_norm t in
   printf "Normal Form : %s@."
     (Common.Ultils.fOption DeBrujin.string_of_term "Divergent (Timeout)" t');
-  printf "Equa        : %s@." (Type.string_of_equa (Type.gen_equa t (Type.Var "goal")));
+  (* printf "Equa        : %s@." (Type.string_of_equa (fst (Type.gen_equa t (Type.Var "goal")))); *)
   (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
-  printf "Type        : %s@."
-    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t))
+  match Unification.ptype_of_term ~fv:false t with
+  | None -> printf "Type        : Untypeable@."
+  | Some (ty, [])  -> printf "Type  sans environement      : %s@." (Type.string_of_ptype ty)
+  | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (Type.string_of_ptype ty)
+      (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " 
+      ^ Type.string_of_ptype ty ^ acc) "" env)
+
+
+  (* printf "Type        : %s%s@."(hd (Option.get types))
+    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t)) *)
+
   (* printf "Type NF     : %s@."
     (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t')) *)
   (* let sty = 
@@ -43,16 +48,9 @@ let test t =
 
 
 let exec file =
-  (* try *)
     eprintf "interpreting %s@." file;
     let prog  = from_file file     in
-    (* let value = Interpreter.i_prog prog in *)
-    (* printf "%s@." (Pp.value value) *)
     List.iter test prog
-  (* with
-  | Failure e        -> eprintf "failure: %s@." e
-  | Tinyml.Error.E e -> eprintf "%a %a@." error () Tinyml.Error.pp e
-  | Common.Error.E e -> eprintf "%a %a@." error () Common.Error.pp e *)
 
 let () =
   if Array.length argv < 2 then help () else
