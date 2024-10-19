@@ -12,6 +12,7 @@ rule token = parse
   (* Operations ------------------------------------------------------------- *)
   | "λ" | "l" | "L" | "lambda" { LAMBDA                                        }
   | "+"                        { PLUS                                          }
+  | "-"                        { SUB                                           }
   | "*"                        { STAR                                          }
   | "::"                       { DCOLON                                        }
   | "HD"                       { HD                                            }
@@ -27,6 +28,7 @@ rule token = parse
   | ";"        { SEMI                                                          }
   | eof        { EOF                                                           }
   (* Keywords --------- ----------------------------------------------------- *)
+  | "fix"      { FIX                                                           }
   | "ifz"      { IFZ                                                           }
   | "ifn"      { IFN                                                           }
   | "then"     { THEN                                                          }

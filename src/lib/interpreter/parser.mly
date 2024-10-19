@@ -4,16 +4,18 @@
 %}
 
 (* Special characters *)
-%token LPAR RPAR LBRA RBRA PLUS STAR IDI DCOLON SEMI EOF
+%token LPAR RPAR LBRA RBRA IDI DCOLON SEMI EOF
 
-%left PLUS
-%left STAR
 
 (* Operations *)
-%token LAMBDA HD TL
+%token LAMBDA HD TL PLUS SUB STAR
+
+%left PLUS
+%left SUB
+%left STAR
 
 (* Keywords *)
-%token IFZ IFN THEN ELSE
+%token FIX IFZ IFN THEN ELSE
 
 (* Values *)
 %token <int> CNAT
@@ -32,6 +34,7 @@
 term:
 | ap=appTerm           { ap           }
 | LAMBDA t=term        { Abs t        }
+| FIX t=term           { Fix t        }
 | IFZ c=term THEN t1=term ELSE t2=term { Ifz (c, t1, t2) }
 | IFN c=term THEN t1=term ELSE t2=term { Ifn (c, t1, t2) }
 
@@ -43,6 +46,7 @@ appTerm:
 arithTerm:
 | t=unitTerm                     { t            }
 | t1=arithTerm STAR t2=arithTerm { Mul (t1, t2) }
+| t1=arithTerm SUB  t2=arithTerm { Sub (t1, t2) }
 | t1=arithTerm PLUS t2=arithTerm { Add (t1, t2) }
 
 unitTerm:

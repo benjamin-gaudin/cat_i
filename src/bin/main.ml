@@ -25,7 +25,7 @@ let test (t, options) =
   printf "Term        : %s@." (DeBrujin.string_of_term t);
   let t' = DeBrujin.ltr_cbv_norm t in
   printf "Normal Form : %s@."
-    (Common.Ultils.fOption DeBrujin.string_of_term "Divergent (Timeout)" t');
+    (Option.fold ~none:"Divergent (Timeout)" ~some:DeBrujin.string_of_term t');
   if List.mem Eq options then printf 
     "Equa        : %s@." (Type.string_of_equa (fst (Type.gen_equa ~fv:false t (Type.Var "goal"))))
   else ();
@@ -36,20 +36,6 @@ let test (t, options) =
   | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (Type.string_of_ptype ty)
       (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " 
       ^ Type.string_of_ptype ty ^ acc) "" env)
-
-
-  (* printf "Type        : %s%s@."(hd (Option.get types))
-    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t)) *)
-
-  (* printf "Type NF     : %s@."
-    (Common.Ultils.fOption Type.string_of_ptype "Untypeable" (Unification.ptype_of_term t')) *)
-  (* let sty = 
-    match Unification.ptype_of_term t with
-    | Some ty -> Type.string_of_ptype ty
-    | None    -> "Non typable"
-  in
-  printf "Type        : %s@." sty *)
-
 
 let exec file =
     eprintf "interpreting %s@." file;

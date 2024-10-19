@@ -4,15 +4,16 @@ type plist = Nil
 and pterm =  Nat of int
            | Var of int
            | Lis of plist
+           | Fix of pterm
            | HD  of pterm
            | TL  of pterm
            | Abs of pterm
            | App of pterm * pterm
            | Add of pterm * pterm
+           | Sub of pterm * pterm
            | Mul of pterm * pterm
            | Ifz of pterm * pterm * pterm
            | Ifn of pterm * pterm * pterm
-
 
 val plist_of_list : pterm list -> plist
 

@@ -1,5 +1,6 @@
 - Parser associativity Add Mul
 - Pretty printer env / fv
+- Typing fixpoint
 
 - Nat AST
 
