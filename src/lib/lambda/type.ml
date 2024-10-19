@@ -73,12 +73,34 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
         (gen_eq_r ~fv:fv d (e_fv::e) t ty)
       )
   | Add (t1, t2) | Mul (t1, t2) ->
-      try
+      (try
         let (eqs1, fvs1) = gen_eq_r ~fv:fv d e t1 Nat in
         let (eqs2, fvs2) = gen_eq_r ~fv:fv d e t2 Nat in
         (((ty, Nat) :: eqs1 @ eqs2), fvs1 @ fvs2)
       with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs) )
-                (gen_eq_r ~fv:fv d (e_fv::e) t ty)
+                (gen_eq_r ~fv:fv d (e_fv::e) t ty))
+  | Ifz (c, t1, t2) ->
+      let ta = new_ptype() in
+      (try
+      let (eqsc, fvsc) = (gen_eq_r ~fv:fv d e c Nat) in
+      let (eqs1, fvs1) = (gen_eq_r ~fv:fv d e t1 ta) in
+      let (eqs2, fvs2) = (gen_eq_r ~fv:fv d e t2 ta) in
+      ((ty, ta) :: eqsc @ eqs1 @ eqs2, fvsc @ fvs1 @ fvs2)
+      with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs))
+        (gen_eq_r ~fv:fv d (e_fv::e) t ty)
+      )
+  | Ifn (c, t1, t2) ->
+      let ta = new_ptype() in
+      let tr = new_ptype() in
+      (try
+      let (eqsc, fvsc) = (gen_eq_r ~fv:fv d e c (Lis ta)) in
+      let (eqs1, fvs1) = (gen_eq_r ~fv:fv d e t1 tr) in
+      let (eqs2, fvs2) = (gen_eq_r ~fv:fv d e t2 tr) in
+      ((ty, tr) :: eqsc @ eqs1 @ eqs2, fvsc @ fvs1 @ fvs2)
+      with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs))
+        (gen_eq_r ~fv:fv d (e_fv::e) t ty)
+      )
+
 
 let gen_equa ?(fv=true) t ty = try gen_eq_r ~fv:fv 0 [] t ty with
                | FVExp (var, ty) -> print_endline "not catched";

@@ -10,6 +10,9 @@ and pterm =  Nat of int
            | App of pterm * pterm
            | Add of pterm * pterm
            | Mul of pterm * pterm
+           | Ifz of pterm * pterm * pterm
+           | Ifn of pterm * pterm * pterm
+
 
 val plist_of_list : pterm list -> plist
 

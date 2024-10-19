@@ -1,3 +1,6 @@
+type opt =
+  | Fv | Eq
+
 let fOption (f : 'a -> 'b) (d : 'b) (o : 'a option) =
 (* let stringOption fString s t = *)
   match o with

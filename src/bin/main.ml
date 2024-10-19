@@ -1,6 +1,8 @@
+open Common.Ultils
 open Format
 open Lambda
 open Sys
+
 
 let help () =
   eprintf "usage:\n";
@@ -18,13 +20,15 @@ let from_file (f : string) =
   p
 
 
-let test t =
+let test (t, options) =
   printf "----------------@." ;
   printf "Term        : %s@." (DeBrujin.string_of_term t);
   let t' = DeBrujin.ltr_cbv_norm t in
   printf "Normal Form : %s@."
     (Common.Ultils.fOption DeBrujin.string_of_term "Divergent (Timeout)" t');
-  (* printf "Equa        : %s@." (Type.string_of_equa (fst (Type.gen_equa t (Type.Var "goal")))); *)
+  if List.mem Eq options then printf 
+    "Equa        : %s@." (Type.string_of_equa (fst (Type.gen_equa ~fv:false t (Type.Var "goal"))))
+  else ();
   (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
   match Unification.ptype_of_term ~fv:false t with
   | None -> printf "Type        : Untypeable@."
@@ -49,7 +53,7 @@ let test t =
 
 let exec file =
     eprintf "interpreting %s@." file;
-    let prog  = from_file file     in
+    let prog = from_file file in
     List.iter test prog
 
 let () =
