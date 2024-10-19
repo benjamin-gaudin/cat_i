@@ -28,7 +28,7 @@ let test t =
   (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
   match Unification.ptype_of_term ~fv:false t with
   | None -> printf "Type        : Untypeable@."
-  | Some (ty, [])  -> printf "Type  sans environement      : %s@." (Type.string_of_ptype ty)
+  | Some (ty, [])  -> printf "Type        : %s@." (Type.string_of_ptype ty)
   | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (Type.string_of_ptype ty)
       (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " 
       ^ Type.string_of_ptype ty ^ acc) "" env)

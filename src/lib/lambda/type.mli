@@ -2,6 +2,7 @@ open DeBrujin
 
 type ptype = Nat
            | Var of string
+           | Lis of ptype
            | Arr of ptype * ptype
 
 (* Pretty printer ptype *)

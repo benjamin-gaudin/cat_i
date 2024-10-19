@@ -13,10 +13,15 @@ rule token = parse
   | "λ" | "l" | "L" | "lambda" { LAMBDA                                        }
   | "+"                        { PLUS                                          }
   | "*"                        { STAR                                          }
+  | "::"                       { DCOLON                                        }
+  | "HD"                       { HD                                            }
+  | "TL"                       { TL                                            }
   (* Special characters ----------------------------------------------------- *)
   | "i"        { IDI                                                           }
   | "("        { LPAR                                                          }
   | ")"        { RPAR                                                          }
+  | "["        { LBRA                                                          }
+  | "]"        { RBRA                                                          }
   | "//"       { comnt lexbuf                                                  }
   | space      { token lexbuf                                                  }
   | ";"        { SEMI                                                          }

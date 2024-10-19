@@ -3,13 +3,13 @@
 %}
 
 (* Special characters *)
-%token LPAR RPAR PLUS STAR IDI SEMI EOF
+%token LPAR RPAR LBRA RBRA PLUS STAR IDI DCOLON SEMI EOF
 
 %left PLUS
 %left STAR
 
 (* Operations *)
-%token LAMBDA
+%token LAMBDA HD TL
 
 (* Values *)
 %token <int> CNAT
@@ -25,17 +25,33 @@
 term:
 | ap=appTerm           { ap           }
 | LAMBDA t=term        { Abs t        }
-| t1=term PLUS t2=term { Add (t1, t2) }
-| t1=term STAR t2=term { Mul (t1, t2) }
+
 
 appTerm:
-| t=unitTerm             { t            }
+| t=arithTerm            { t            }
 | ap=appTerm ut=unitTerm { App (ap, ut) }
+
+arithTerm:
+| t=unitTerm                     { t            }
+| t1=arithTerm STAR t2=arithTerm { Mul (t1, t2) }
+| t1=arithTerm PLUS t2=arithTerm { Add (t1, t2) }
 
 unitTerm:
 | LPAR t=term RPAR   { t     }
 | IDI i=CNAT         { Var i }
 | n=CNAT             { Nat n }
+| HD t=unitTerm      { HD t  }
+| TL t=unitTerm      { TL t  }
+| l=listTerm         { Lis l }
+
+listTerm:
+| LBRA RBRA                     {Nil}
+| LBRA s=seq RBRA               {plist_of_list s}
+| t=unitTerm DCOLON l=listTerm  { Con (t,l) }
+
+seq:
+| t=term             { [t]     }
+| t=term SEMI ts=seq { t :: ts }
 
 (* Program ------------------------------------------------------------------ *)
 

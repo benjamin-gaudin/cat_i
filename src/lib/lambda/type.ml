@@ -1,6 +1,7 @@
 open DeBrujin
 type ptype = Nat
            | Var of string
+           | Lis of ptype
            | Arr of ptype * ptype
 
 (* Pretty printer *)
@@ -8,6 +9,7 @@ let rec string_of_ptype ty =
   match ty with
   | Nat            -> "Nat"
   | Var x          -> x
+  | Lis l          -> "[" ^ string_of_ptype l ^ "]"
   | Arr (ty1, ty2) ->
       "(" ^ (string_of_ptype ty1) ^ " -> " ^ (string_of_ptype ty2) ^ ")"
 
@@ -27,10 +29,6 @@ let string_of_equa eq =
 (* Environement type *)
 type env = (int * ptype) list
 
-(* Get the type of the variables v in the environement e *)
-let get_type v e =
-  snd (List.find (fun x -> fst x = v) e)
-
 exception FVExp of (int * ptype)
 
 (* Create the equations system for the type of a terms *)
@@ -38,10 +36,28 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
   match t with
   | Nat _        -> ([ty, Nat], [])
   | Var v        ->
-      (try ([(get_type (d - 1 - v) e), ty], []) with
+      (try ([(List.assoc (d - 1 - v) e), ty], []) with
       | Not_found ->
         if fv then raise (FVExp (d - 1 - v, new_ptype ()))
         else ([], []))
+  | Lis Nil      -> ([ty, Lis (new_ptype ())], [])
+  | Lis (Con (t, ts)) ->
+      let ta = new_ptype() in
+      (try
+        let (eqs1, fvs1) = (gen_eq_r ~fv:fv d e t ta) in
+        let (eqs2, fvs2) = (gen_eq_r ~fv:fv d e (Lis ts) (Lis ta)) in
+        ((ty, Lis ta) :: eqs1 @ eqs2, fvs1 @ fvs2)
+      with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs))
+        (gen_eq_r ~fv:fv d (e_fv::e) t ty)
+      )
+  | HD t         -> 
+      let ta = new_ptype() in
+      let (eqs, fvs) = gen_eq_r ~fv:fv d e t (Lis ta) in
+      ((ty, ta) :: eqs, fvs)
+  | TL t         -> 
+      let ta = new_ptype() in
+      let (eqs, fvs) = gen_eq_r ~fv:fv d e t ta in
+      ((ty, ta) :: eqs, fvs)
   | Abs t'       ->
       let ta = new_ptype() in
       let tr = new_ptype() in
@@ -56,15 +72,13 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
       with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs) )
         (gen_eq_r ~fv:fv d (e_fv::e) t ty)
       )
-
-
   | Add (t1, t2) | Mul (t1, t2) ->
-      let call = fun e e_fv ->
+      try
         let (eqs1, fvs1) = gen_eq_r ~fv:fv d e t1 Nat in
         let (eqs2, fvs2) = gen_eq_r ~fv:fv d e t2 Nat in
-        (((ty, Nat) :: eqs1 @ eqs2), e_fv @ fvs1 @ fvs2)
-      in
-      (try call e [] with FVExp e_fv -> call (e_fv :: e) [e_fv])
+        (((ty, Nat) :: eqs1 @ eqs2), fvs1 @ fvs2)
+      with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs) )
+                (gen_eq_r ~fv:fv d (e_fv::e) t ty)
 
 let gen_equa ?(fv=true) t ty = try gen_eq_r ~fv:fv 0 [] t ty with
                | FVExp (var, ty) -> print_endline "not catched";
