@@ -1,5 +1,5 @@
 %{
-  open Lambda.DeBrujin
+  open Common.Ast
   open Common.Ultils
 %}
 
@@ -24,7 +24,7 @@
 %token OPE OPF
 
 %start program
-%type <(pterm * opt list) list> program
+%type <(term * opt list) list> program
 
 %%
 
@@ -32,36 +32,36 @@
 (* Expressions ---------------------------------------------------------------*)
 
 term:
-| ap=appTerm                           { ap              }
-| LAMBDA t=term                        { Abs t           }
-| FIX t=term                           { Fix t           }
-| LET x=term EQUAL t1=term IN t2=term  { Let (x, t1, t2) }
-| IFZ c=term THEN t1=term ELSE t2=term { Ifz (c, t1, t2) }
-| IFN c=term THEN t1=term ELSE t2=term { Ifn (c, t1, t2) }
+| ap=appTerm                           { ap                   }
+| LAMBDA t=term                        { Uop (Abs, t)         }
+| FIX t=term                           { Uop (Fix, t)         }
+| LET x=term EQUAL t1=term IN t2=term  { Let (x, t1, t2)      }
+| IFZ c=term THEN t1=term ELSE t2=term { Cod (Ifz, c, t1, t2) }
+| IFN c=term THEN t1=term ELSE t2=term { Cod (Ifn, c, t1, t2) }
 
 
 appTerm:
-| t=arithTerm            { t            }
-| ap=appTerm ut=unitTerm { App (ap, ut) }
+| t=arithTerm            { t                  }
+| ap=appTerm ut=unitTerm { Bop (App, ap, ut) }
 
 arithTerm:
 | t=unitTerm                     { t            }
-| t1=arithTerm STAR t2=arithTerm { Mul (t1, t2) }
-| t1=arithTerm SUB  t2=arithTerm { Sub (t1, t2) }
-| t1=arithTerm PLUS t2=arithTerm { Add (t1, t2) }
+| t1=arithTerm STAR t2=arithTerm { Bop (Mul, t1, t2) }
+| t1=arithTerm SUB  t2=arithTerm { Bop (Sub, t1, t2) }
+| t1=arithTerm PLUS t2=arithTerm { Bop (Add, t1, t2) }
 
 unitTerm:
-| LPAR t=term RPAR   { t     }
-| IDI i=CNAT         { Var i }
-| n=CNAT             { Nat n }
-| HD t=unitTerm      { HD t  }
-| TL t=unitTerm      { TL t  }
-| l=listTerm         { Lis l }
+| LPAR t=term RPAR   { t           }
+| IDI i=CNAT         { Var i       }
+| n=CNAT             { Nat n       }
+| HD t=unitTerm      { Uop (HD, t) }
+| TL t=unitTerm      { Uop (TL, t) }
+| l=listTerm         { Lis l       }
 
 listTerm:
-| LBRA RBRA                     {Nil}
-| LBRA s=seq RBRA               {plist_of_list s}
-| t=unitTerm DCOLON l=listTerm  { Con (t,l) }
+| LBRA RBRA                     { Nil             }
+| LBRA s=seq RBRA               { tlist_of_list s }
+| t=unitTerm DCOLON l=listTerm  { Con (t,l)       }
 
 seq:
 | t=term             { [t]     }

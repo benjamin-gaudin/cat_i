@@ -4,6 +4,11 @@ open Format
 open Lambda
 open Sys
 
+let nl = Common.Pp.nl std_formatter
+let print_term = Pp.term  std_formatter
+let print_type = Pp.ttype std_formatter
+let print_equa = Pp.equas std_formatter
+
 
 let help () =
   eprintf "usage:\n";
@@ -20,23 +25,22 @@ let from_file (f : string) =
   let p = Interpreter.Parser.program Interpreter.Lexer.token lb in
   p
 
-
 let test (t, options) =
   printf "----------------@." ;
-  printf "Term        : %s@." (DeBrujin.string_of_term t);
-  let t' = DeBrujin.ltr_cbv_norm t in
-  printf "Normal Form : %s@."
-    (Option.fold ~none:"Divergent (Timeout)" ~some:DeBrujin.string_of_term t');
-  if List.mem Eq options then printf 
-    "Equa        : %s@." (string_of_equa (fst (Gen_equa.gen_equa ~fv:false t (Var "goal"))))
+  printf "Term        : ";
+  print_term t; nl ();
+  let t' = Reduction.norm t in
+  printf "Normal Form : ";
+  match t' with
+  | None    -> printf "Divergent (Timeout)"
+  | Some t' -> print_term t'; 
+  nl ();
+  if List.mem Eq options then (printf "Equa        : "; 
+    (print_equa (Gen_equa.gen_equa t (Var "goal"))))
   else ();
-  (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
-  match Resolve.ptype_of_term ~fv:false t with
-  | None -> printf "Type        : Untypeable@."
-  | Some (ty, [])  -> printf "Type        : %s@." (string_of_ptype ty)
-  | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (string_of_ptype ty)
-      (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " 
-      ^ string_of_ptype ty ^ acc) "" env)
+  match Resolve.ptype_of_term t with
+  | None    -> printf "Type        : Untypeable@."
+  | Some ty -> (printf "Type        : "; print_type ty; nl ();)
 
 let exec file =
     eprintf "interpreting %s@." file;
@@ -50,83 +54,3 @@ let () =
   | "exec" -> Array.iter exec input
   | _      -> help ()
 
-
-(* λ 5 1 *)
-(* let t0 = Abs (App (Var 4, Var 0)) *)
-(* let t0 = Abs (Var 0) *)
-(* let t0' = lift t0 *)
-(* let t0'' = gen_equa t0 (Var "but") *)
-(* let () = print_endline (print_equa t0'') *)
-
-(* let () =
-if Var "T1" = Var "T1" then
-  print_endline "true"
-else
-  print_endline "false" *)
-
-
-(* let t3 = Abs (Abs (Var 1)) *)
-(* let t3' = gen_equa t3 (Var "but") *)
-(* let t3'' = resolve t3' *)
-
-(* let () = print_endline "t3'"
-let () = print_endline (print_equa t3')
-let () = print_endline "t3''"
-let () = print_endline (print_equa t3'') *)
-(* let () = print_endline (print_term t0') *)
-
-(* (λ λ 4 2 (λ 1 3)) (λ 5 1) *)
-(* let t1 : pterm = App (Abs (Abs (App (Var 3, App (Var 1, Abs (App (Var 0, Var 2)))))), Abs (App (Var 4, Var 0)))
-let () = print_endline (string_of_term t1)
-let () = print_endline (string_of_equa (gen_equa t1 (Var "but")))
-let () = print_endline (string_of_ptype (ptype_of_term t1)) *)
-
-(* λ 3 (λ 6 1) (λ 1 (λ 7 1)) *)
-(* λ 4 (λ 6 2) (λ 1 (λ 7 3)) *)
-(* let t1' = ltr_cbv_step t1 *)
-(* let t1'' = ltr_cbv_norm t1 *)
-
-(* let t2 = App (App (Abs (Abs (Var 1)), Abs (Var 0)), Abs (Var 0))
-let t2' = ltr_cbv_norm t2
-let t2'' = gen_equa t2 (Var "but")
-(* let t2''' = resolve t2'' *)
-let () = print_endline (string_of_ptype (ptype_of_term t2)) *)
-
-(* λx λy λz (x z) (y z) *)
-(* λ  λ  λ  (2 0) (1 0) *)
-(* let s = Abs (Abs (Abs (App (App (Var 2, Var 0), App(Var 1, Var 0)))))
-let () = print_endline (string_of_term s)
-(* let s' = gen_equa s (Var "but") *)
-(* let s'' = resolve s' *)
-let () = print_endline (string_of_ptype (ptype_of_term s)) *)
-
-(* let () = print_endline (print_term t2) *)
-(* let () = print_endline (print_term t2') *)
-(* let () = print_endline (print_equa t2'') *)
-(* let () = print_endline (print_equa t2''') *)
-
-(* let () = print_endline (print_term t1)
-let () = print_endline (print_term t1') *)
-(* let () = print_endline (print_term t1'') *)
-
-(* λ  λ  (2 0)  λ (2 1) *)
-(* let t4 = Abs (Abs (App (App (Var 2, Var 0), Abs (App(Var 2, Var 1)))))
-let () = print_endline (string_of_term t4)
-let () = print_endline (string_of_ptype (ptype_of_term t4)) *)
-
-(* let t1 = Abs (Abs (App (Var 1, Var 0))) *)
-(* let () = print_endline (string_of_equa (gen_equa t1 (Var "but"))) *)
-(* let () = print_endline (string_of_ptype (ptype_of_term t1)) *)
-(* let tadd =  *)
-  (* Abs (Abs (Abs (Abs (App (App (Var 3, Var 1), (App (App(Var 2, Var 1), Var 0))))))) *)
-(* let t1_add_1 : pterm = App (App (tadd, t1), t1) *)
-(* let tadd_1 : pterm = App ((tadd), (t1)) *)
-(* let () = print_endline ("add 1 : " ^ (string_of_term tadd_1)) *)
-(* let t1_add_1' = ltr_cbv_norm t1_add_1 *)
-(* let () = print_endline (string_of_term t1_add_1) *)
-(* let () = print_endline (string_of_term t1_add_1') *)
-(* let () = print_endline (string_of_equa (gen_equa t1_add_1' (Var "but"))) *)
-(* let () = print_endline (string_of_ptype (ptype_of_term t1_add_1')) *)
-
-(* let () = print_endline "λ ello, World!" *)
-(* add 1 (λ λ λ λ ((3 1) ((2 1) 0)) λ λ (1 0) ) *)
