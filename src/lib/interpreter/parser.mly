@@ -4,7 +4,7 @@
 %}
 
 (* Special characters *)
-%token LPAR RPAR LBRA RBRA IDI DCOLON SEMI EOF
+%token LPAR RPAR LBRA RBRA IDI DCOLON SEMI EQUAL EOF
 
 
 (* Operations *)
@@ -15,12 +15,12 @@
 %left STAR
 
 (* Keywords *)
-%token FIX IFZ IFN THEN ELSE
+%token FIX IFZ IFN THEN ELSE LET IN
 
 (* Values *)
-%token <int> CNAT
+%token <int>    CNAT
 
-(* Values *)
+(* Conditions *)
 %token OPE OPF
 
 %start program
@@ -32,9 +32,10 @@
 (* Expressions ---------------------------------------------------------------*)
 
 term:
-| ap=appTerm           { ap           }
-| LAMBDA t=term        { Abs t        }
-| FIX t=term           { Fix t        }
+| ap=appTerm                           { ap              }
+| LAMBDA t=term                        { Abs t           }
+| FIX t=term                           { Fix t           }
+| LET x=term EQUAL t1=term IN t2=term  { Let (x, t1, t2) }
 | IFZ c=term THEN t1=term ELSE t2=term { Ifz (c, t1, t2) }
 | IFN c=term THEN t1=term ELSE t2=term { Ifn (c, t1, t2) }
 

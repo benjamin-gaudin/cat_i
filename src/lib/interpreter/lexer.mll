@@ -11,6 +11,7 @@ let space = [' ' '\n']+
 rule token = parse
   (* Operations ------------------------------------------------------------- *)
   | "λ" | "l" | "L" | "lambda" { LAMBDA                                        }
+  | "="                        { EQUAL                                         }
   | "+"                        { PLUS                                          }
   | "-"                        { SUB                                           }
   | "*"                        { STAR                                          }
@@ -28,6 +29,8 @@ rule token = parse
   | ";"        { SEMI                                                          }
   | eof        { EOF                                                           }
   (* Keywords --------- ----------------------------------------------------- *)
+  | "let"      { LET                                                           }
+  | "in"       { IN                                                            }
   | "fix"      { FIX                                                           }
   | "ifz"      { IFZ                                                           }
   | "ifn"      { IFN                                                           }
@@ -37,7 +40,7 @@ rule token = parse
   | "e" | "-e"   { OPE                                                         }
   | "fv" | "-fv" { OPF                                                         }
   (* Values ----------------------------------------------------------------- *)
-  | num as n   { CNAT  (int_of_string n)                                       }
+  | num as n   { CNAT (int_of_string n)                                        }
   (* Unknown ---------------------------------------------------------------- *)
   | _          { raise (E (Lexing_error (lexeme lexbuf)))                      }
 

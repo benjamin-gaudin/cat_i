@@ -1,6 +1,7 @@
 - Parser associativity Add Mul
 - Pretty printer env / fv
-- Typing fixpoint
+- Refactor
+- Gen unique fv variables not all
 
 - Nat AST
 

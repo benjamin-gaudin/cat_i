@@ -13,6 +13,7 @@ and pterm =  Nat of int
            | Add of pterm * pterm
            | Sub of pterm * pterm
            | Mul of pterm * pterm
+           | Let of pterm * pterm * pterm
            | Ifz of pterm * pterm * pterm
            | Ifn of pterm * pterm * pterm
 
@@ -36,10 +37,12 @@ let rec string_of_term t =
   | HD  t        -> "HD (" ^ string_of_term t ^ ")"
   | TL  t        -> "TL (" ^ string_of_term t ^ ")"
   | Abs t        -> "(λ " ^ ( string_of_term t) ^ ")"
-  | App (t1, t2) -> (string_of_term t1) ^ " " ^ (string_of_term t2) 
-  | Add (t1, t2) -> (string_of_term t1) ^ " + " ^ (string_of_term t2) 
-  | Sub (t1, t2) -> (string_of_term t1) ^ " - " ^ (string_of_term t2) 
-  | Mul (t1, t2) -> (string_of_term t1) ^ " * " ^ (string_of_term t2) 
+  | App (t1, t2) -> (string_of_term t1) ^ " " ^ (string_of_term t2)
+  | Add (t1, t2) -> (string_of_term t1) ^ " + " ^ (string_of_term t2)
+  | Sub (t1, t2) -> (string_of_term t1) ^ " - " ^ (string_of_term t2)
+  | Mul (t1, t2) -> (string_of_term t1) ^ " * " ^ (string_of_term t2)
+  | Let (x, t1, t2) -> "let " ^ (string_of_term x) ^ " = " ^ 
+      (string_of_term t1) ^ " in " ^ (string_of_term t2)
   | Ifz (c, t1, t2) -> "ifz " ^ (string_of_term c) ^ " then " ^
     (string_of_term t1) ^ " else " ^ (string_of_term t2)
   | Ifn (c, t1, t2) -> "ifn " ^ (string_of_term c) ^ " then " ^
@@ -65,6 +68,8 @@ and lift_rec depth t =
   | Add (t1, t2) -> Add ((lift_rec depth t1), (lift_rec depth t2))
   | Sub (t1, t2) -> Sub ((lift_rec depth t1), (lift_rec depth t2))
   | Mul (t1, t2) -> Mul ((lift_rec depth t1), (lift_rec depth t2))
+  | Let (x, t1, t2) -> 
+      Let ((lift_rec depth x), (lift_rec depth t1), (lift_rec depth t2))
   | Ifz (c, t1, t2) -> 
       Ifz ((lift_rec depth c), (lift_rec depth t1),(lift_rec depth t2))
   | Ifn (c, t1, t2) -> 
@@ -72,29 +77,31 @@ and lift_rec depth t =
 
 let lift = lift_rec 0
 
-let rec subs_list_rec d l u =
+let rec subs_list_rec d l v u =
   match l with
   | Nil         -> Nil
-  | Con (t, ts) -> Con (subs_rec d t u, subs_list_rec d ts u)
+  | Con (t, ts) -> Con (subs_rec d t v u, subs_list_rec d ts v u)
 
 (* Substitute variables at index 0 by term u *)
-and subs_rec d t u =
+and subs_rec d t v u =
   match t with
   | Nat x        -> Nat x
-  | Var x        -> if x = d then u else t
-  | Lis l        -> Lis (subs_list_rec d l u)
-  | Fix t        -> Fix (subs_rec d t u)
-  | HD  t        -> HD  (subs_rec d t u)
-  | TL  t        -> TL  (subs_rec d t u)
-  | Abs t'       -> Abs (subs_rec (d + 1) t' (lift u))
-  | App (t1, t2) -> App ((subs_rec d t1 u), (subs_rec d t2 u))
-  | Add (t1, t2) -> Add ((subs_rec d t1 u), (subs_rec d t2 u))
-  | Sub (t1, t2) -> Sub ((subs_rec d t1 u), (subs_rec d t2 u))
-  | Mul (t1, t2) -> Mul ((subs_rec d t1 u), (subs_rec d t2 u))
+  | Var x        -> if x = d + v then u else t
+  | Lis l        -> Lis (subs_list_rec d l v u)
+  | Fix t        -> Fix (subs_rec d t v u)
+  | HD  t        -> HD  (subs_rec d t v u)
+  | TL  t        -> TL  (subs_rec d t v u)
+  | Abs t'       -> Abs (subs_rec (d + 1) t' v (lift u))
+  | App (t1, t2) -> App (subs_rec d t1 v u, subs_rec d t2 v u)
+  | Add (t1, t2) -> Add (subs_rec d t1 v u, subs_rec d t2 v u)
+  | Sub (t1, t2) -> Sub (subs_rec d t1 v u, subs_rec d t2 v u)
+  | Mul (t1, t2) -> Mul (subs_rec d t1 v u, subs_rec d t2 v u)
+  | Let (x, t1, t2) -> 
+      Let (subs_rec d x v u, subs_rec d t1 v u, subs_rec d t2 v u)
   | Ifz (c, t1, t2) -> 
-      Ifz ((subs_rec d c u), (subs_rec d t1 u),(subs_rec d t2 u))
+      Ifz (subs_rec d c v u, subs_rec d t1 v u, subs_rec d t2 v u)
   | Ifn (c, t1, t2) -> 
-      Ifn ((subs_rec d c u), (subs_rec d t1 u),(subs_rec d t2 u))
+      Ifn (subs_rec d c v u, subs_rec d t1 v u, subs_rec d t2 v u)
 
 let subs = subs_rec 0
 
@@ -102,7 +109,8 @@ let subs = subs_rec 0
 let is_value t =
   match t with
    | Nat _ | Var _ | Abs _ | App ((Var _), _) | Lis _ -> true
-   | Add _ | Sub _ | Mul _ | App _ | HD _ | TL _ | Ifz _ | Ifn _ | Fix _ -> false
+   | Add _ | Sub _ | Mul _ | App _ | HD _ | TL _ | Ifz _ |
+     Ifn _ | Fix _ | Let _ -> false
 
 
 (* Return a term after one step of beta reduction *)
@@ -136,8 +144,11 @@ let rec ltr_cbv_step t =
       Option.bind (ltr_cbv_step c) (fun t -> Some (Ifn (t, t1, t2)))
   | Ifn (Lis Nil, t1, _) -> Some t1
   | Ifn (_,       _, t2) -> Some t2
-  | Fix (Abs t1      ) -> Some (subs t1 (Fix (Abs t1)))
-  | App (Abs t1,   t2) when is_value t2 -> Some (subs t1 t2)
+  | Fix (Abs t1      ) -> Some (subs t1 0 (Fix (Abs t1)))
+  | Let (x, t1, t2) when not (is_value t1) -> 
+      Option.bind (ltr_cbv_step t1) (fun t -> Some (Let (x, t, t2)))
+  | Let (Var x, t1, t2) -> Some (subs t2 x t1) (* TODO choose depth in subs*)
+  | App (Abs t1,   t2) when is_value t2 -> Some (subs t1 0 t2)
   | App (t1,       t2) when not (is_value t1) -> 
       Option.bind (ltr_cbv_step t1) (fun t -> Some (App (t, t2))) 
   | App (t1,       t2) when not (is_value t2) ->

@@ -12,6 +12,7 @@ and pterm =  Nat of int
            | Add of pterm * pterm
            | Sub of pterm * pterm
            | Mul of pterm * pterm
+           | Let of pterm * pterm * pterm
            | Ifz of pterm * pterm * pterm
            | Ifn of pterm * pterm * pterm
 
@@ -20,8 +21,8 @@ val plist_of_list : pterm list -> plist
 (* pretty printer *)
 val string_of_term : pterm -> string
 
-(* Substitute variables at index 0 by term u *)
-val subs : pterm -> pterm -> pterm
+(* Substitute variables at index v by term u *)
+val subs : pterm -> int -> pterm -> pterm
 
 (* Retourne the normal form of a term *)
 val ltr_cbv_norm : pterm -> pterm option

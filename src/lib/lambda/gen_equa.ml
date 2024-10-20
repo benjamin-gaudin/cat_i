@@ -1,22 +1,5 @@
+open Common.Type
 open DeBrujin
-type ptype = Nat
-           | Var of string
-           | Lis of ptype
-           | Arr of ptype * ptype
-
-(* Pretty printer *)
-let rec string_of_ptype ty =
-  match ty with
-  | Nat            -> "Nat"
-  | Var x          -> x
-  | Lis l          -> "[" ^ string_of_ptype l ^ "]"
-  | Arr (ty1, ty2) ->
-      "(" ^ (string_of_ptype ty1) ^ " -> " ^ (string_of_ptype ty2) ^ ")"
-
-(* Create a type with a new label *)
-let new_ptype =
-  let cpt = ref (-1) in
-  fun () -> incr cpt; Var ("T" ^ ( string_of_int !cpt ))
 
 type equa = (ptype * ptype) list
 
@@ -26,9 +9,24 @@ let string_of_equa eq =
   (List.map (fun x -> "\n" ^ string_of_ptype (fst x) ^ " = " ^ 
                             string_of_ptype (snd x)) eq)
 
+let rec concat_uniq xs ys =
+  match xs with
+  | [] -> ys
+  | x :: xs -> if List.mem x xs then concat_uniq xs ys 
+               else concat_uniq xs (x :: ys)
+
+let rec vars_of_type ty =
+  match ty with
+  | Common.Type.Nat | Gen _ -> []
+  | Var x -> [Common.Type.Var x]
+  | Lis ty ->  vars_of_type ty
+  | Arr (ty1, ty2) -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
+
 (* Environement type *)
 type env = (int * ptype) list
 
+exception UntypeableLet of pterm
+exception UntypeableFix of pterm
 exception FVExp of (int * ptype)
 
 (* Create the equations system for the type of a terms *)
@@ -38,6 +36,9 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
   | Var v        ->
       (try ([ty, (List.assoc (d - 1 - v) e)], []) with
       | Not_found ->
+        (* print_endline "Not_found variable in env"; *)
+        (* print_endline ((string_of_int (d - 1 - v)) ^ " vs " ^ (string_of_int (fst (List.hd e)))); *)
+        (* print_endline (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " ^ string_of_ptype ty ^ acc) "" e); *)
         if fv then raise (FVExp (d - 1 - v, new_ptype ()))
         else ([], []))
   | Lis Nil      -> ([ty, Lis (new_ptype ())], [])
@@ -46,7 +47,7 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
       (try
         let (eqs1, fvs1) = gen_eq_r ~fv:fv d e t ta in
         let (eqs2, fvs2) = gen_eq_r ~fv:fv d e (Lis ts) (Lis ta) in
-        ((ty, Lis ta) :: eqs1 @ eqs2, fvs1 @ fvs2)
+        ((ty, Common.Type.Lis ta) :: eqs1 @ eqs2, fvs1 @ fvs2)
       with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs))
         (gen_eq_r ~fv:fv d (e_fv::e) t ty)
       )
@@ -76,9 +77,29 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
       (try
         let (eqs1, fvs1) = gen_eq_r ~fv:fv d e t1 Nat in
         let (eqs2, fvs2) = gen_eq_r ~fv:fv d e t2 Nat in
-        (((ty, Nat) :: eqs1 @ eqs2), fvs1 @ fvs2)
+        (((ty, Common.Type.Nat) :: eqs1 @ eqs2), fvs1 @ fvs2)
       with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs) )
                 (gen_eq_r ~fv:fv d (e_fv::e) t ty))
+  | Let (x, t1, t2) ->
+      let ta = new_ptype() in
+      (* let tr = new_ptype() in *)
+      (* let ta = Unification.ptype_of_term ~fv:false t1 in *)
+      let (eq, _) = gen_eq_r ~fv:true d e t1 ta in 
+      let eq_ta = Unification.resolve eq ta in
+      (* print_endline ("Equa of N with ta = " ^ (string_of_ptype ta) );
+      print_endline (Common.Type.string_of_equa eq);
+      print_endline "after resolving";
+      print_endline (Common.Type.string_of_equa (Option.get eq_ta)); *)
+      (match x, eq_ta with
+      | Var x, Some ((_, ta) :: _ ) ->
+          (* print_endline ("ta : " ^ string_of_ptype ta); *)
+          let fvs = vars_of_type ta in
+          let ta = List.fold_left (fun acc ty -> (Gen(ty, acc))) ta fvs in
+          (* print_endline ("new env for l let in : " ^ string_of_ptype ta); *)
+          let (eqs, fvs) = gen_eq_r ~fv:fv d ((- x -1, ta) :: e) t2 ty in
+          (* ((tr, ta) :: eqs, fvs) *)
+          (eqs, fvs)
+      | _                   -> raise (UntypeableLet t))
   | Ifz (c, t1, t2) ->
       let ta = new_ptype() in
       (try
@@ -103,8 +124,13 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
   | Fix (t) ->
       let ta = new_ptype() in
       let tr = new_ptype() in
+      let t' =
+      (match t with
+      | Abs t' -> t'
+      | _      -> raise (UntypeableFix t))
+      in
       (try
-      let (eqs, fvs) = gen_eq_r ~fv:fv d ((d, Arr (ta, tr)) :: e) t (Arr (ta, tr)) in
+      let (eqs, fvs) = gen_eq_r ~fv:fv d ((d, Arr (ta, tr)) :: e) t' (Arr (ta, tr)) in
       (* let (eqs, fvs) = gen_eq_r ~fv:fv d ((d, Arr (ta, tr)) :: e) t tr in *)
       ((ty, Arr(ta,tr)) :: eqs, fvs)
       with FVExp e_fv -> (fun (vars, fvs) -> (vars, e_fv :: fvs))
@@ -115,6 +141,10 @@ let rec gen_eq_r ?(fv=true) d e (t : pterm) ty : (ptype * ptype) list * env =
 
 
 let gen_equa ?(fv=true) t ty = try gen_eq_r ~fv:fv 0 [] t ty with
+               | UntypeableLet (t) -> 
+                   failwith ("TODO UntypeableLet : " ^ string_of_term t)
+               | UntypeableFix (t) -> 
+                   failwith ("TODO UntypeableFix : " ^ string_of_term t)
                | FVExp (var, ty) -> print_endline "not catched";
                    ([Var "goal", ty], [var,ty])
 

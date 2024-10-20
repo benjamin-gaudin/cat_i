@@ -1,4 +1,5 @@
 open Common.Ultils
+open Common.Type
 open Format
 open Lambda
 open Sys
@@ -27,15 +28,15 @@ let test (t, options) =
   printf "Normal Form : %s@."
     (Option.fold ~none:"Divergent (Timeout)" ~some:DeBrujin.string_of_term t');
   if List.mem Eq options then printf 
-    "Equa        : %s@." (Type.string_of_equa (fst (Type.gen_equa ~fv:false t (Type.Var "goal"))))
+    "Equa        : %s@." (string_of_equa (fst (Gen_equa.gen_equa ~fv:false t (Var "goal"))))
   else ();
   (* printf "Equa NF     : %s@." (Type.string_of_equa (Type.gen_equa t' (Type.Var "goal"))); *)
-  match Unification.ptype_of_term ~fv:false t with
+  match Resolve.ptype_of_term ~fv:false t with
   | None -> printf "Type        : Untypeable@."
-  | Some (ty, [])  -> printf "Type        : %s@." (Type.string_of_ptype ty)
-  | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (Type.string_of_ptype ty)
+  | Some (ty, [])  -> printf "Type        : %s@." (string_of_ptype ty)
+  | Some (ty, env) -> printf "Type        : %s\n  With environement :%s@." (string_of_ptype ty)
       (List.fold_left (fun acc (var, ty)-> "\n    " ^ DeBrujin.string_of_term (Var (- var)) ^ " : " 
-      ^ Type.string_of_ptype ty ^ acc) "" env)
+      ^ string_of_ptype ty ^ acc) "" env)
 
 let exec file =
     eprintf "interpreting %s@." file;
