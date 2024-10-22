@@ -44,40 +44,48 @@ let is_value = function
       Bop (App, (Var _), _) -> true
   | Uop _ | Bop _ | Let _ | Cod _ -> false
 
+let rec red_step t = 
+  match t with
+  | Uop _ -> red_step_Uop t
+  | Bop _ -> red_step_Bop t
+  | Let _ -> red_step_Let t
+  | Cod _ -> red_step_Cod t
+  | _     -> None
 
-let rec red_step = function
+and red_step_Uop = function
   | Uop (HD, Lis Con (t, _))  -> Some t
   | Uop (TL, Lis Con (_, ts)) -> Some (Lis ts)
-  (* | Bop (Add, Nat 0, Nat n) | Bop (Add, Nat n, Nat 0)
-    | Bop (Sub, Nat 0, Nat n) | Bop (Sub, Nat n, Nat 0) -> Some (Nat n)
-  | Bop (Mul, Nat 0, Nat _) | Bop (Mul, Nat _, Nat 0) -> Some (Nat 0) *)
+  | Uop (Fix, Uop (Abs, t1))  -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
+  | _                         -> None
+
+and red_step_Bop = function
+  | Bop (Sub, Nat 0, Nat n) | Bop (Sub, Nat n, Nat 0) -> Some (Nat n)
   | Bop (Add, Nat m, Nat n) -> Some (Nat (m + n))
   | Bop (Sub, Nat m, Nat n) -> Some (Nat (m - n))
   | Bop (Mul, Nat m, Nat n) -> Some (Nat (m * n))
-  | Bop (b, t1, t2 ) when not (b = App) ->
-      Option.bind (red_step t1) (fun t -> Some (Bop (b, t, t2)))
-  | Bop (b, t1, t2 ) when not (b = App) ->
-      Option.bind (red_step t2) (fun t -> Some (Bop (b, t1, t)))
-  | Cod (Ifn, Nat 0, t1, _) -> Some t1
-  | Cod (Ifz, Lis Nil, t1, _) -> Some t1
-  | Cod (co, c, t1, t2) when not (is_value c) ->
-      Option.bind (red_step c) (fun t -> Some (Cod (co, t, t1, t2)))
-  | Cod (Ifz, Nat _, _, t2) -> Some t2
-  | Cod (Ifn, Lis Nil, _, t2) -> Some t2
-  | Uop (Fix, Uop (Abs, t1)) -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
-  | Let (x, t1, t2) when not (is_value x) -> 
-      Option.bind (red_step x) (fun t -> Some (Let (t, t1, t2)))
-  | Let (x, t1, t2) when not (is_value t1) -> 
-      Option.bind (red_step t1) (fun t -> Some (Let (x, t, t2)))
-  | Let (Var n, t1, t2) -> Some (subs t2 n t1) 
   | Bop (App, Uop (Abs, t1), t2) when is_value t2 -> Some (subs t1 0 t2)
-  | Bop (App, t1,       t2) when not (is_value t1) -> 
-      Option.bind (red_step t1) (fun t -> Some (Bop (App, t, t2)))
-  | Bop (App, t1,       t2) when not (is_value t2) ->
-      Option.bind (red_step t2) (fun t -> Some (Bop (App, t1, t)))
-  (* | Lis _        -> failwith "TODO reduction list" *)
+  | Bop (b,   t1,    t2   ) when not (is_value t1) -> 
+      Option.bind (red_step t1) (fun t -> Some (Bop (b, t, t2)))
+  | Bop (b,   t1,    t2   ) when not (is_value t2) ->
+      Option.bind (red_step t2) (fun t -> Some (Bop (b, t1, t)))
   | _               -> None
 
+and red_step_Cod = function
+  | Cod (Ifn, Lis Nil, t1, _) -> Some t1
+  | Cod (Ifz, Nat 0,   t1, _) -> Some t1
+  | Cod (Ifz, Nat _,   _, t2) -> Some t2
+  | Cod (Ifn, Lis _,   _, t2) -> Some t2
+  | Cod (co, c, t1, t2) when not (is_value c) ->
+      Option.bind (red_step c) (fun t -> Some (Cod (co, t, t1, t2)))
+  | _                         -> None
+
+and red_step_Let = function
+  | Let (x, t1, t2) when not (is_value x) ->
+      Option.bind (red_step x) (fun t -> Some (Let (t, t1, t2)))
+  | Let (x, t1, t2) when not (is_value t1) ->
+      Option.bind (red_step t1) (fun t -> Some (Let (x, t, t2)))
+  | Let (Var n, t1, t2) -> Some (subs t2 n t1)
+  | _               -> None
 
 (* Retourne the normal form of a term *)
 let rec norm_rec n t =
