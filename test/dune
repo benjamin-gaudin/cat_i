@@ -1,2 +1,2 @@
 (test
- (name test_lambdaOcaml))
+ (name test_cat_i))
