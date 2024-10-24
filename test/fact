@@ -1,0 +1,7 @@
+// fact
+// fix (λ λ ifz i0 then 1 else i0 * (i1 (i0 - 1)));;
+
+// fact 5
+let i0 = fix (λ λ ifz i0 then 1 else i0 * (i1 (i0 - 1))) in
+i0 5;;
+

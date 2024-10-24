@@ -56,12 +56,10 @@ unitTerm:
 | n=CNAT             { Nat n       }
 | HD t=unitTerm      { Uop (HD, t) }
 | TL t=unitTerm      { Uop (TL, t) }
-| l=listTerm         { Lis l       }
+| LBRA RBRA          { Nil             }
+| LBRA s=seq RBRA    { tlist_of_list s }
+| t=unitTerm DCOLON ts=unitTerm  { Con (t,ts)       }
 
-listTerm:
-| LBRA RBRA                     { Nil             }
-| LBRA s=seq RBRA               { tlist_of_list s }
-| t=unitTerm DCOLON l=listTerm  { Con (t,l)       }
 
 seq:
 | t=term             { [t]     }

@@ -1,14 +1,15 @@
 open Common.Ast
 
-let rec lift_list_rec d = function
+(* let rec lift_list_rec d = function
   | Nil         -> Nil
-  | Con (t, ts) -> Con (lift_rec d t, lift_list_rec d ts)
+  | Con (t, ts) -> Con (lift_rec d t, lift_list_rec d ts) *)
 
-and lift_rec d t =
+let rec lift_rec d t =
   match t with
+  | Nil             -> Nil
   | Nat n           -> Nat n
   | Var n           -> if n <= d then t else Var (n + 1)
-  | Lis l           -> Lis (lift_list_rec d l)
+  | Con (t, ts)     -> Con (lift_rec d t, lift_rec d ts)
   | Uop (Abs, t)    -> Uop (Abs, (lift_rec (d + 1) t))
   | Uop (u, t)      -> Uop (u, (lift_rec d t))
   | Bop (b, t1, t2) -> Bop (b, (lift_rec d t1), (lift_rec d t2))
@@ -18,18 +19,19 @@ and lift_rec d t =
 
 let lift = lift_rec 0
 
-let rec subs_list_rec d l x u =
+(* let rec subs_list_rec d l x u =
   match l with
   | Nil         -> Nil
-  | Con (t, ts) -> Con (subs_rec d t x u, subs_list_rec d ts x u)
+  | Con (t, ts) -> Con (subs_rec d t x u, subs_list_rec d ts x u) *)
 
-and subs_rec d t x u =
+let rec subs_rec d t x u =
   match t with
+  | Nil             -> Nil
   | Nat n           -> Nat n
   | Var n           -> if n = d + x then u else t
-  | Lis l           -> Lis (subs_list_rec d l x u)
+  | Con (t, ts)     -> Con (subs_rec d t x u, subs_rec d ts x u)
   | Uop (Abs, t')   -> Uop (Abs, (subs_rec (d + 1) t' x (lift u)))
-  | Uop (uop, t)      -> Uop (uop, (subs_rec d t x u))
+  | Uop (uop, t)    -> Uop (uop, (subs_rec d t x u))
   | Bop (b, t1, t2) -> Bop (b, (subs_rec d t1 x u), (subs_rec d t2 x u))
   | Let (v, t1, t2) ->
       Let (subs_rec d v x u, subs_rec d t1 x u, subs_rec d t2 x u)
@@ -40,7 +42,7 @@ let subs = subs_rec 0
 
 (* Return if a term is a value aka a non-reductible term *)
 let is_value = function
-  | Nat _ | Var _ | Lis _ | Uop (Abs, _) |
+  | Nil | Nat _ | Var _ | Con _ | Uop (Abs, _) |
       Bop (App, (Var _), _) -> true
   | Uop _ | Bop _ | Let _ | Cod _ -> false
 
@@ -53,8 +55,8 @@ let rec red_step t =
   | _     -> None
 
 and red_step_Uop = function
-  | Uop (HD, Lis Con (t, _))  -> Some t
-  | Uop (TL, Lis Con (_, ts)) -> Some (Lis ts)
+  | Uop (HD, Con (t, _))      -> Some t
+  | Uop (TL, Con (_, ts))     -> Some ts
   | Uop (Fix, Uop (Abs, t1))  -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
   | _                         -> None
 
@@ -71,10 +73,10 @@ and red_step_Bop = function
   | _               -> None
 
 and red_step_Cod = function
-  | Cod (Ifn, Lis Nil, t1, _) -> Some t1
+  | Cod (Ifn, Nil, t1, _)     -> Some t1
   | Cod (Ifz, Nat 0,   t1, _) -> Some t1
   | Cod (Ifz, Nat _,   _, t2) -> Some t2
-  | Cod (Ifn, Lis _,   _, t2) -> Some t2
+  | Cod (Ifn, Con _,   _, t2) -> Some t2
   | Cod (co, c, t1, t2) when not (is_value c) ->
       Option.bind (red_step c) (fun t -> Some (Cod (co, t, t1, t2)))
   | _                         -> None
@@ -93,9 +95,9 @@ let rec norm_rec n t =
   (* Option.fold ~none:(Some t) ~some:(norm_rec (n+1)) (red_step t)) *)
     (* fOption (ltr_cbv_norm_rec (n + 1)) t (ltr_cbv_step t) *)
     match red_step t with
-    | Some t' -> (Pp.term Format.std_formatter (Option.get (red_step t));
-                 (Common.Pp.nl Format.std_formatter ());
-        norm_rec (n + 1) t')
+    | Some t' -> norm_rec (n + 1) t'
+        (* (Pp.term Format.std_formatter (Option.get (red_step t));
+                 (Common.Pp.nl Format.std_formatter ()); *)
     | None    -> Some t
 
 let norm = norm_rec 0

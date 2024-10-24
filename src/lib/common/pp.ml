@@ -1,3 +1,4 @@
+open Error
 open Format
 open Ast
 
@@ -12,7 +13,7 @@ let uop fmt = function
   | Abs -> fprintf fmt "λ"
 
 let bop fmt = function
-  | App -> fprintf fmt "@"
+  | App -> fprintf fmt ""
   | Add -> fprintf fmt "+"
   | Sub -> fprintf fmt "-"
   | Mul -> fprintf fmt "*"
@@ -25,3 +26,11 @@ let semi fmt _ =
 
 let tab fmt _ =
   fprintf fmt "\t"
+
+let err fmt = function
+  | EInput f        -> 
+      fprintf fmt "couldn't open input file@;%s" f
+  | EParse s ->
+      fprintf fmt "Found unexpected '%s'" (String.escaped s)
+  | Lexing_error s ->
+      fprintf fmt "Unknown character '%s'" (String.escaped s)

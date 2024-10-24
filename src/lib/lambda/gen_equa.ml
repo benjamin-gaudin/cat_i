@@ -11,23 +11,31 @@ let rec vars_of_type ty =
 
 (* Create the equations system for the type of a terms *)
 let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
+  (* print_endline ("start ------ ");
+  Pp.term Format.std_formatter t; Common.Pp.nl Format.std_formatter ();
+  Pp.env Format.std_formatter e; Common.Pp.nl Format.std_formatter ();
+  print_endline ("end ------ "); *)
   match t with
+  | Nil   -> [ty, Lis (new_ptype ())]
   | Nat _ -> [ty, Nat]
-  | Var v -> (try [ty, (List.assoc (d - 1 - v) e)] with
+  | Var v -> (
+              (* print_endline ("d = " ^ (string_of_int (d - 1 - v)));
+              print_endline ("env ------ ");
+              Pp.env Format.std_formatter e;
+              print_endline ("------ "); *)
+              try [ty, (List.assoc (d - 1 - v) e)] with
               | Not_found -> raise (FVNotFound t))
-  | Lis l               -> gen_eq_r_Lis d e l ty
+              (* | Not_found -> []) *)
+  | Con (t, ts)         -> gen_eq_r_Con d e t ts ty
   | Uop (u, t)          -> gen_eq_r_Uop d e u t ty
   | Bop (b, t1, t2)     -> gen_eq_r_Bop d e b t1 t2 ty
   | Let (x, t1, t2)     -> gen_eq_r_Let d e x t1 t2 ty
   | Cod (co, c, t1, t2) -> gen_eq_r_Cod d e co c t1 t2 ty
 
-and gen_eq_r_Lis d e l ty : (ptype * ptype) list =
-  match l with
-  | Nil      -> [ty, Lis (new_ptype ())]
-  | Con (t, ts) ->
+and gen_eq_r_Con d e t ts ty : (ptype * ptype) list =
       let ta = new_ptype() in
       let eqs1 = gen_eq_r d e t ta in
-      let eqs2 = gen_eq_r d e (Lis ts) (Lis ta) in
+      let eqs2 = gen_eq_r d e ts (Lis ta) in
       (ty, Common.Type.Lis ta) :: eqs1 @ eqs2
 
 and gen_eq_r_Uop d e u t ty =
@@ -50,9 +58,9 @@ and gen_eq_r_Uop d e u t ty =
       let tr = new_ptype() in
       let t' = (match t with
                 | Uop (Abs, t') -> t'
-                | _             -> raise (UntypeableFix t))
+                | _             -> raise (UntypeableFix (Uop (Fix, t))))
       in
-      let eqs = gen_eq_r d ((d, Arr (ta, tr)) :: e) t' (Arr (ta, tr)) in
+      let eqs = gen_eq_r d ((d - 1, Arr (ta, tr)) :: e) t' (Arr (ta, tr)) in
       (ty, Arr(ta,tr)) :: eqs
 
 and gen_eq_r_Bop d e b t1 t2 ty =

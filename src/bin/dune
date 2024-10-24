@@ -1,4 +1,4 @@
 (executable
  (public_name lambdaOcaml)
  (name main)
- (libraries lambda interpreter))
+ (libraries lambda interpreter colorsh))
