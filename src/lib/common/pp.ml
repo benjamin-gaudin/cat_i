@@ -17,6 +17,7 @@ let bop fmt = function
   | Add -> fprintf fmt "+"
   | Sub -> fprintf fmt "-"
   | Mul -> fprintf fmt "*"
+  | Con -> fprintf fmt "::"
 
 let nl fmt _ =
   fprintf fmt "\n"

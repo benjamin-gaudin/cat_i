@@ -1,0 +1,5 @@
+// result = 253
+let i0 = fix (λ λ λ ifz i1 then i0 + 1
+                    else ifz i0 then i2 (i1 - 1) 1
+                    else i2 (i1 - 1) (i2 i1 (i0 -1))) in
+i0 3 5;; e;

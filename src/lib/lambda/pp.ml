@@ -9,8 +9,8 @@ let rec term fmt = function
   | Nat n           -> fprintf fmt "%d" n
   | Var n           -> fprintf fmt "ᵢ%d" n
   (* | Con (t, ts)     -> fprintf fmt "%a :: %a" term t term ts *)
-  | Con (t, ts)     ->
-      fprintf fmt "[%a]" (pp_print_list ~pp_sep:semi term) (list_of_tlist (Con (t,ts)))
+  | Bop (Con, t, ts)     ->
+      fprintf fmt "[%a]" (pp_print_list ~pp_sep:semi term) (list_of_tlist (Bop (Con, t,ts)))
   | Uop (u, t)      -> fprintf fmt "%a %a" uop u term t
   | Bop (b, t1, t2) -> fprintf fmt "(%a %a %a)" term t1 bop b term t2
   | Let (x, t1, t2) -> fprintf fmt "let %a = %a in %a" term x term t1 term t2

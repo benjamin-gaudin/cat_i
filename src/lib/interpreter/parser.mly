@@ -58,7 +58,7 @@ unitTerm:
 | TL t=unitTerm      { Uop (TL, t) }
 | LBRA RBRA          { Nil             }
 | LBRA s=seq RBRA    { tlist_of_list s }
-| t=unitTerm DCOLON ts=unitTerm  { Con (t,ts)       }
+| t=unitTerm DCOLON ts=unitTerm  { Bop (Con, t,ts)  }
 
 
 seq:

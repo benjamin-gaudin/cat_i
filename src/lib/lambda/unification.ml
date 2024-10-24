@@ -55,7 +55,8 @@ let rec uni_step eq goal =
 
 (* Resolve a equations systeme for a "goal"*)
 let rec resolve_rec n eq goal =
-  (* print_endline (string_of_equa eq); *)
+  (* Pp.equas Format.std_formatter eq; Common.Pp.nl Format.std_formatter ();
+  print_endline "----"; *)
   if n > 500 then None else
   match uni_step eq goal with
   | None -> None

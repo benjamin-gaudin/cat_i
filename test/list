@@ -1,16 +1,13 @@
 // map
 // ifn i0 then [] else (i1 (HD i0)) :: (i2 (TL i0));;
-// λ λ (i1 (HD i0)) :: (TL i0);;
-// λ λ λ (i1 (HD i0)) :: (i2 (TL i0));;
-// λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 (TL i0));;
 
-// fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)));;
+let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in i1;; e;
+// let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in
+// let i0 = λ 2 * i0 in
+// i1 i0 [5;10;2];;
 
-// 0 :: (3 + 5);;
-
-
-let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in
-let i0 = λ 2 * i0 in
-i1 i0 [5;10];;
-
+// let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in
+// let i0 = λ 2 * i0 in
+// let i2 = i1 i0 [10;2] in
+// HD TL i2;;
 

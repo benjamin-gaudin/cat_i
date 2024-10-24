@@ -81,3 +81,7 @@
 // let i1 = 2 in i1;;
 // let i0 = λ i0 in i0 i0;;
 // let i0 = λ i0 in (i0 i0) 2;; -e;
+
+
+// let i0 = λ i0 in i0 i0;; e;
+
