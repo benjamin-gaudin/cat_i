@@ -1,10 +1,12 @@
-type cond = Ifz | Ifn
+type cond = Ifz | Ifn | If
 
 type uop  = Fix | HD | TL | Abs
 
-type bop  = App | Add | Sub | Mul | Con
+type bop  = App | And | Or | Add | Sub | Mul | Con
 
-type term = Nil
+type const = Nil | Tru | Fal
+
+type term = Con of const
           | Nat of int
           | Var of int
           | Uop of uop * term

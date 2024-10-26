@@ -10,14 +10,16 @@ let space = [' ' '\n']+
 
 rule token = parse
   (* Operations ------------------------------------------------------------- *)
-  | "λ" | "l" | "L" | "lambda" { LAMBDA                                        }
-  | "="                        { EQUAL                                         }
-  | "+"                        { PLUS                                          }
-  | "-"                        { SUB                                           }
-  | "*"                        { STAR                                          }
-  | "::"                       { DCOLON                                        }
-  | "HD"                       { HD                                            }
-  | "TL"                       { TL                                            }
+  | "λ" | "l"  { LAMBDA                                                        }
+  | "="        { EQUAL                                                         }
+  | "&&"       { AND                                                           }
+  | "||"       { OR                                                            }
+  | "+"        { ADD                                                          }
+  | "-"        { SUB                                                           }
+  | "*"        { MUL                                                          }
+  | "::"       { DCOLON                                                        }
+  | "HD"       { HD                                                            }
+  | "TL"       { TL                                                            }
   (* Special characters ----------------------------------------------------- *)
   | "i"        { IDI                                                           }
   | "("        { LPAR                                                          }
@@ -34,12 +36,14 @@ rule token = parse
   | "fix"      { FIX                                                           }
   | "ifz"      { IFZ                                                           }
   | "ifn"      { IFN                                                           }
+  | "if"       { IF                                                            }
   | "then"     { THEN                                                          }
   | "else"     { ELSE                                                          }
   (* options ---------------------------------------------------------------- *)
-  | "e" | "-e"   { OPE                                                         }
-  | "fv" | "-fv" { OPF                                                         }
+  | "e" | "-e" { OPE                                                           }
   (* Values ----------------------------------------------------------------- *)
+  | "true"     { TRUE                                                          }
+  | "false"    { FALSE                                                         }
   | num as n   { CNAT (int_of_string n)                                        }
   (* Unknown ---------------------------------------------------------------- *)
   | _          { raise (E (Lexing_error (lexeme lexbuf)))                      }

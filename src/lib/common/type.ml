@@ -1,4 +1,5 @@
 type ptype = Nat
+           | Boo
            | Var of string
            | Lis of ptype
            | Gen of ptype * ptype

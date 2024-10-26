@@ -1,5 +1,5 @@
-open Common.Ultils
 open Common.Type
+open Common
 open Format
 open Lambda
 open Sys
@@ -14,7 +14,7 @@ let err pp e =
 
 let help () =
   eprintf "usage:\n";
-  eprintf "    lambda <command> <arguments>\n";
+  eprintf "    cat_i <command> <arguments>\n";
   eprintf "commands:\n";
   eprintf "    exec\n";
   eprintf "    help\n"
@@ -22,32 +22,45 @@ let help () =
 let from_file (f : string) =
   let c = 
       try open_in f
-      with _ -> raise (Common.Error.E (Common.Error.EInput f))
+      with _ -> Common.Error.eraise (Common.Error.EInput f)
   in
   let lb  = Lexing.from_channel c in
   let p =
       try Interpreter.Parser.program Interpreter.Lexer.token lb 
       with Interpreter.Parser.Error -> 
-        raise (Common.Error.E (Common.Error.EParse (Lexing.lexeme lb)))
+        Common.Error.eraise (Common.Error.EParse (Lexing.lexeme lb))
   in
   p
 
-let test (t, options) =
-  printf "----------------@." ;
-  printf "Term        : ";
-  print_term t; nl ();
+let print_equa t =
+    try
+      (printf "Equa        : "; nl ();
+      (print_equa (Gen_equa.gen_equa t (Var "goal"))); nl ();)
+    with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
+
+let print_nf t =
   let t' = Reduction.norm t in
   printf "Normal Form : ";
   match t' with
   | None    -> printf "Divergent (Timeout)"
-  | Some t' -> print_term t'; 
-  nl ();
-  if List.mem Eq options then (printf "Equa        : "; nl ();
-    (print_equa (Gen_equa.gen_equa t (Var "goal"))); nl ();)
-  else ();
-  match Resolve.ptype_of_term t with
-  | None    -> printf "Type        : Untypeable@."
-  | Some ty -> (printf "Type        : "; print_type ty; nl ();)
+  | Some t' -> print_term t'
+
+let print_type t =
+  try
+    match Resolve.ptype_of_term t with
+    | None    -> printf "Type        : Untypeable@."
+    | Some ty -> printf "Type        : "; print_type ty; nl ()
+  with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
+  
+
+let test (t, options) =
+  Options.set_list options;
+  printf "----------------@." ;
+  printf "Term        : ";
+  print_term t; nl ();
+  print_nf t; nl ();
+  if !Options.eq then print_equa t else ();
+  print_type t
 
 let exec file =
   eprintf "interpreting %s@." file;

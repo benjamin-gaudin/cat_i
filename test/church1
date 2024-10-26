@@ -8,7 +8,7 @@
 // (λ λ λ λ (i3 i1) (i2 i1 i0)) (λ λ i1 i0) (λ λ i1 i0);;
 
 // (1+1) + (1+1)
-(λ λ λ λ (i3 i1) (i2 i1 i0)) ((λ λ λ λ (i3 i1) (i2 i1 i0)) (λ λ i1 i0) (λ λ i1 i0)) ((λ λ λ λ (i3 i1) (i2 i1 i0)) (λ λ i1 i0) (λ λ i1 i0));;
+// (λ λ λ λ (i3 i1) (i2 i1 i0)) ((λ λ λ λ (i3 i1) (i2 i1 i0)) (λ λ i1 i0) (λ λ i1 i0)) ((λ λ λ λ (i3 i1) (i2 i1 i0)) (λ λ i1 i0) (λ λ i1 i0));;
 
 // ((λ λ i1 i1 i2) i3) i4;;
 // λ λ (1 0 1 2) 3 4;;
@@ -84,4 +84,10 @@
 
 
 // let i0 = λ i0 in i0 i0;; e;
+
+// let i0 = (λ i0 i0) (λ i0 i0) in i0;;
+
+// let i0 = true && false || true in i0 && true;;
+
+let i0 = true && false || true in if i0 && false then true else false;;
 

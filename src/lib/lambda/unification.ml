@@ -3,7 +3,7 @@ open Common.Type
 (* Check if a type occur in another type *)
 let rec occurCheck ty1 ty2 =
   match ty2 with
-  | Nat          -> false
+  | Nat | Boo    -> false
   | Var _        -> ty1 = ty2
   | Lis tyl      -> occurCheck ty1 tyl
   | Gen (_,  ty) -> occurCheck ty1 ty
@@ -12,6 +12,7 @@ let rec occurCheck ty1 ty2 =
 (* Substitute a type ty1 by a type ty2 in ty3 *)
 let rec subs_type ty1 ty2 ty3 =
   match ty3 with
+  | Boo              -> Boo
   | Nat              -> Nat
   | Var _            -> if ty1 = ty3 then ty2 else ty3
   | Lis tyl          -> if ty1 = ty3 then ty2 else Lis (subs_type ty1 ty2 tyl)
@@ -28,7 +29,8 @@ let rec subs_equ ty ty' eq =
 let diff_consructor t1 t2 =
   match t1, t2 with
   | (Arr _, Nat) | (Nat, Arr _) | (Arr _, Lis _) | (Lis _, Arr _)
-    | (Nat, Lis _) | (Lis _, Nat) -> true
+    | (Nat, Lis _) | (Lis _, Nat) | (Boo, Nat) | (Boo, Arr _) 
+    | (Boo, Lis _) -> true
   | _ -> false
 
 (* Step of a naive unification algorithm *)

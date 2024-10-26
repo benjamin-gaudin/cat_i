@@ -2,7 +2,13 @@ open Error
 open Format
 open Ast
 
+let const fmt = function
+  | Nil -> fprintf fmt "[]"
+  | Tru -> fprintf fmt "true"
+  | Fal -> fprintf fmt "false"
+
 let cond fmt = function
+  | If  -> fprintf fmt "If"
   | Ifz -> fprintf fmt "Ifz"
   | Ifn -> fprintf fmt "Ifn"
 
@@ -13,6 +19,8 @@ let uop fmt = function
   | Abs -> fprintf fmt "λ"
 
 let bop fmt = function
+  | And -> fprintf fmt "&&"
+  | Or  -> fprintf fmt "||"
   | App -> fprintf fmt ""
   | Add -> fprintf fmt "+"
   | Sub -> fprintf fmt "-"
@@ -29,7 +37,7 @@ let tab fmt _ =
   fprintf fmt "\t"
 
 let err fmt = function
-  | EInput f        -> 
+  | EInput f ->
       fprintf fmt "couldn't open input file@;%s" f
   | EParse s ->
       fprintf fmt "Found unexpected '%s'" (String.escaped s)

@@ -1,6 +1,11 @@
 open Common.Ast
 
-exception UntypeableLet of term
-exception UntypeableFix of term
-exception FVNotFound    of term
+type t =
+  | UntypeableLet of term
+  | UntypeableFix of term
+  | FVNotFound    of term
 
+exception E of t
+
+let eraise e =
+    raise (E e)

@@ -4,3 +4,6 @@ type t =
   | Lexing_error    of string
 
 exception E of t
+
+let eraise e =
+    raise (E e)

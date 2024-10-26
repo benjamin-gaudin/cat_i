@@ -10,19 +10,20 @@ let rec concat_uniq l1 l2 =
 
 let rec vars_of_type (ty : ptype) =
   match ty with
-  | Nat | Gen _    -> []
-  | Var x          -> [Common.Type.Var x]
-  | Lis ty         ->  vars_of_type ty
-  | Arr (ty1, ty2) -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
+  | Boo | Nat | Gen _ -> []
+  | Var x             -> [Common.Type.Var x]
+  | Lis ty            ->  vars_of_type ty
+  | Arr (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
 
 
 (* Create the equations system for the type of a terms *)
 let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
   match t with
-  | Nil                 -> [ty, Lis (new_ptype ())]
+  | Con Tru | Con Fal   -> [ty, Boo]
+  | Con Nil             -> [ty, Lis (new_ptype ())]
   | Nat _               -> [ty, Nat]
   | Var v               -> (try [ty, (List.assoc (d - 1 - v) e)] with
-                            | Not_found -> raise (FVNotFound t))
+                            | Not_found -> eraise (FVNotFound t))
   | Uop (u, t)          -> gen_eq_r_Uop d e u t ty
   | Bop (b, t1, t2)     -> gen_eq_r_Bop d e b t1 t2 ty
   | Let (x, t1, t2)     -> gen_eq_r_Let d e x t1 t2 ty
@@ -48,13 +49,17 @@ and gen_eq_r_Uop d e u t ty =
       let tr = new_ptype() in
       let t' = (match t with
                 | Uop (Abs, t') -> t'
-                | _             -> raise (UntypeableFix (Uop (Fix, t))))
+                | _             -> eraise (UntypeableFix (Uop (Fix, t))))
       in
       let eqs = gen_eq_r d ((d - 1, Arr (ta, tr)) :: e) t' (Arr (ta, tr)) in
       (ty, Arr(ta,tr)) :: eqs
 
 and gen_eq_r_Bop d e b t1 t2 ty =
   match (b, t1, t2) with
+  | (And, t1, t2) | (Or, t1, t2) ->
+      let eqs1 = gen_eq_r d e t1 Boo in
+      let eqs2 = gen_eq_r d e t2 Boo in
+      ((ty, Common.Type.Boo) :: eqs1 @ eqs2)
   | (Con, t, ts) ->
       let ta = new_ptype() in
       let eqs1 = gen_eq_r d e t ta in
@@ -80,10 +85,16 @@ and gen_eq_r_Let d e x t1 t2 ty =
         let ta = List.fold_left (fun acc ty -> (Gen(ty, acc))) ta fvs in
         let eqs = gen_eq_r d ((- x -1, ta) :: e) t2 ty in
         eqs
-    | _                   -> raise (UntypeableLet (Let (x, t1, t2)))
+    | _                   -> eraise (UntypeableLet (Let (x, t1, t2)))
 
 and gen_eq_r_Cod d e co c t1 t2 ty =
   match co, c, t1, t2 with
+  | (If, c, t1, t2) ->
+      let ta = new_ptype() in
+      let eqsc = gen_eq_r d e c Boo in
+      let eqs1 = gen_eq_r d e t1 ta in
+      let eqs2 = gen_eq_r d e t2 ta in
+      (ty, ta) :: eqsc @ eqs1 @ eqs2
   | (Ifz, c, t1, t2) ->
       let ta = new_ptype() in
       let eqsc = gen_eq_r d e c Nat in
@@ -100,10 +111,5 @@ and gen_eq_r_Cod d e co c t1 t2 ty =
 
 
 let gen_equa t ty = try gen_eq_r 0 [] t ty with
-               | FVNotFound (_) -> 
-                   failwith ("TODO FVNotFound ")
-               | UntypeableLet (_) -> 
-                   failwith ("TODO UntypeableLet ")
-               | UntypeableFix (_) -> 
-                   failwith ("TODO UntypeableFix ")
+               | E e -> Pp.err Format.std_formatter e; []
 
