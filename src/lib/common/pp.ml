@@ -41,5 +41,5 @@ let err fmt = function
       fprintf fmt "couldn't open input file@;%s" f
   | EParse s ->
       fprintf fmt "Found unexpected '%s'" (String.escaped s)
-  | Lexing_error s ->
+  | ELexing s ->
       fprintf fmt "Unknown character '%s'" (String.escaped s)

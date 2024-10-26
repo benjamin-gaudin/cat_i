@@ -1,7 +1,7 @@
 {
   open Lexing
   open Parser
-  open Error
+  open Common.Error
 }
 
 let num   = ['0'-'9']+
@@ -46,7 +46,7 @@ rule token = parse
   | "false"    { FALSE                                                         }
   | num as n   { CNAT (int_of_string n)                                        }
   (* Unknown ---------------------------------------------------------------- *)
-  | _          { raise (E (Lexing_error (lexeme lexbuf)))                      }
+  | _          { raise (E (ELexing (lexeme lexbuf)))                      }
 
 and comnt = parse
   | '\n' { token lexbuf }
