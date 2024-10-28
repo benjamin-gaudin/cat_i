@@ -6,7 +6,7 @@ type bop  = App | And | Or | Add | Sub | Mul | Con
 
 type const = Nil | Tru | Fal
 
-type term = Con of const
+type term = Cst of const
           | Nat of int
           | Var of int
           | Uop of uop * term

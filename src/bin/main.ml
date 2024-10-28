@@ -4,11 +4,6 @@ open Format
 open Lambda
 open Sys
 
-let nl = Common.Pp.nl std_formatter
-let print_term = Pp.term  std_formatter
-let print_type = Pp.ttype std_formatter
-let print_equa = Pp.equas std_formatter
-
 let err pp e =
     eprintf "@[<hov 4>@{<fg_red>@{<bold>error(%s):@}@}@;%a@]@." pp e
 
@@ -34,31 +29,29 @@ let from_file (f : string) =
 
 let print_equa t =
     try
-      (printf "Equa        : "; nl ();
-      (print_equa (Gen_equa.gen_equa t (Var "goal"))); nl ();)
+      printf "Equa        : %a\n" Pp.equas (Gen_equa.gen_equa t (Var "goal"))
     with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
 
 let print_nf t =
   let t' = Reduction.norm t in
-  printf "Normal Form : ";
+  printf "Normal Form :";
   match t' with
-  | None    -> printf "Divergent (Timeout)"
-  | Some t' -> print_term t'
+  | None    -> printf "Divergent (Timeout) \n"
+  | Some t' -> printf "%a\n" Pp.term t'
 
 let print_type t =
   try
     match Resolve.ptype_of_term t with
-    | None    -> printf "Type        : Untypeable@."
-    | Some ty -> printf "Type        : "; print_type ty; nl ()
+    | None    -> printf "Type        : Untypeable\n"
+    | Some ty -> printf "Type        : %a\n" Pp.ttype ty
   with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
   
 
 let test (t, options) =
   Options.set_list options;
-  printf "----------------@." ;
-  printf "Term        : ";
-  print_term t; nl ();
-  print_nf t; nl ();
+  printf "----------------\n" ;
+  printf "Term        : %a\n" Pp.term t;
+  print_nf t;
   if !Options.eq then print_equa t else ();
   print_type t
 

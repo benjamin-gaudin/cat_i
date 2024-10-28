@@ -6,10 +6,9 @@ open Format
 open Error
 
 let rec term fmt = function
-  | Con c         -> fprintf fmt "%a" const c
+  | Cst c         -> fprintf fmt "%a" const c
   | Nat n           -> fprintf fmt "%d" n
   | Var n           -> fprintf fmt "ᵢ%d" n
-  (* | Con (t, ts)     -> fprintf fmt "%a :: %a" term t term ts *)
   | Bop (Con, t, ts)->
       fprintf fmt "[%a]" (pp_print_list ~pp_sep:semi term) (list_of_tlist (Bop (Con, t,ts)))
   | Uop (u, t)      -> fprintf fmt "%a %a" uop u term t
@@ -21,7 +20,7 @@ let rec term fmt = function
 let rec ttype fmt (t : ptype) =
 match t with
   | Nat            -> fprintf fmt "Nat"
-  | Boo            -> fprintf fmt "Bool"
+  | Bol            -> fprintf fmt "Bool"
   | Var s          -> fprintf fmt "%s" s
   | Lis n          -> fprintf fmt "[%a]" ttype n
   | Gen (x, ty)    -> fprintf fmt "∀ %a. %a" ttype x ttype ty

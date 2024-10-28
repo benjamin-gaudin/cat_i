@@ -6,11 +6,12 @@
 
 (* Special characters *)
 %token LPAR RPAR LBRA RBRA 
-%token DCOLON SEMI
+%token SEMI
 %token IDI EQUAL EOF
 
 
 (* Operations *)
+%token DCOLON
 %token LAMBDA
 %token AND OR
 %token ADD SUB MUL
@@ -19,6 +20,7 @@
 %left ADD SUB
 %left MUL
 %left AND OR
+%left DCOLON
 
 (* Keywords *)
 %token FIX
@@ -40,8 +42,8 @@
 value:
 | IDI i=CNAT { Var i   }
 | n=CNAT     { Nat n   }
-| TRUE       { Con Tru }
-| FALSE      { Con Fal }
+| TRUE       { Cst Tru }
+| FALSE      { Cst Fal }
 
 %inline uop:
 LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL }
@@ -69,7 +71,7 @@ bopTerm:
 unitTerm:
 | LPAR t=term RPAR   { t           }
 | v=value            { v           }
-| LBRA RBRA          { Con Nil     }
+| LBRA RBRA          { Cst Nil     }
 | LBRA s=seq RBRA    { tlist_of_list s }
 | t=unitTerm DCOLON ts=unitTerm  { Bop (Con, t,ts)  }
 

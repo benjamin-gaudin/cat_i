@@ -2,7 +2,7 @@ open Common.Ast
 
 let rec lift_rec d t =
   match t with
-  | Con c           -> Con c
+  | Cst c           -> Cst c
   | Nat n           -> Nat n
   | Var n           -> if n <= d then t else Var (n + 1)
   | Uop (Abs, t)    -> Uop (Abs, (lift_rec (d + 1) t))
@@ -16,7 +16,7 @@ let lift = lift_rec 0
 
 let rec subs_rec d t x u =
   match t with
-  | Con c           -> Con c
+  | Cst c           -> Cst c
   | Nat n           -> Nat n
   | Var n           -> if n = d + x then u else t
   | Uop (Abs, t')   -> Uop (Abs, (subs_rec (d + 1) t' x (lift u)))
@@ -31,7 +31,7 @@ let subs = subs_rec 0
 
 (* Return if a term is a value aka a non-reductible term *)
 let rec is_value = function
-  | Con _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Con _, _) |
+  | Cst _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Cst _, _) |
       Bop (App, Var _, _) -> true
   | Bop (Con, t, ts) when is_value t && is_value ts -> true
   | Uop _ | Bop _ | Let _ | Cod _ -> false
@@ -53,10 +53,10 @@ and red_step_Uop = function
   | _                         -> None
 
 and red_step_Bop = function
-  | Bop (And, Con Tru, b) | Bop (And, b, Con Tru) -> Some b
-  | Bop (And, Con Fal, _) | Bop (And, _, Con Fal) -> Some (Con Fal)
-  | Bop (Or , Con Tru, _) | Bop (Or , _, Con Tru) -> Some (Con Tru)
-  | Bop (Or , Con Fal, b) | Bop (Or , b, Con Fal) -> Some b
+  | Bop (And, Cst Tru, b) | Bop (And, b, Cst Tru) -> Some b
+  | Bop (And, Cst Fal, _) | Bop (And, _, Cst Fal) -> Some (Cst Fal)
+  | Bop (Or , Cst Tru, _) | Bop (Or , _, Cst Tru) -> Some (Cst Tru)
+  | Bop (Or , Cst Fal, b) | Bop (Or , b, Cst Fal) -> Some b
   | Bop (Sub, Nat 0, Nat n) | Bop (Sub, Nat n, Nat 0) -> Some (Nat n)
   | Bop (Add, Nat m, Nat n) -> Some (Nat (m + n))
   | Bop (Sub, Nat m, Nat n) -> Some (Nat (m - n))
@@ -69,9 +69,9 @@ and red_step_Bop = function
   | _               -> None
 
 and red_step_Cod = function
-  | Cod (If,  Con Tru, t1, _) -> Some t1
-  | Cod (If,  Con Fal, _, t2) -> Some t2
-  | Cod (Ifn, Con Nil, t1, _) -> Some t1
+  | Cod (If,  Cst Tru, t1, _) -> Some t1
+  | Cod (If,  Cst Fal, _, t2) -> Some t2
+  | Cod (Ifn, Cst Nil, t1, _) -> Some t1
   | Cod (Ifz, Nat 0,   t1, _) -> Some t1
   | Cod (Ifz, Nat _,   _, t2) -> Some t2
   | Cod (Ifn, Bop (Con, _, _),   _, t2) -> Some t2
