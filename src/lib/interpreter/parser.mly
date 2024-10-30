@@ -6,11 +6,12 @@
 
 (* Special characters *)
 %token LPAR RPAR LBRA RBRA 
-%token SEMI
+%token COMA SEMI
 %token IDI EQUAL EOF
 
 
 (* Operations *)
+%token FST SND
 %token DCOLON
 %token LAMBDA
 %token AND OR
@@ -46,10 +47,10 @@ value:
 | FALSE      { Cst Fal }
 
 %inline uop:
-LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL }
+LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL } | FST { Fst } | SND { Snd }
 
 %inline bop:
-| ADD { Add } | SUB { Sub } | MUL { Mul } | AND { And } | OR  { Or }
+| ADD { Add } | SUB { Sub } | MUL { Mul } | AND { And } | OR { Or }
 
 %inline condition:
 | IF { If } | IFZ { Ifz } | IFN { Ifn }
@@ -69,11 +70,12 @@ bopTerm:
 | t1=bopTerm b=bop  t2=bopTerm { Bop (b, t1, t2) }
 
 unitTerm:
-| LPAR t=term RPAR   { t           }
-| v=value            { v           }
-| LBRA RBRA          { Cst Nil     }
-| LBRA s=seq RBRA    { tlist_of_list s }
-| t=unitTerm DCOLON ts=unitTerm  { Bop (Con, t,ts)  }
+| LPAR t=term RPAR               { t                 }
+| LPAR t1=term COMA t2=term RPAR { Bop (Pai, t1, t2) }
+| v=value                        { v                 }
+| LBRA RBRA                      { Cst Nil           }
+| LBRA s=seq RBRA                { tlist_of_list s   }
+| t=unitTerm DCOLON ts=unitTerm  { Bop (Con, t,ts)   }
 
 seq:
 | t=term             { [t]     }

@@ -1,6 +1,9 @@
-- Con binary constructor ?
+- Unit
+- Seq
+- Ascription
+- Tuples
+- Records
 
-- Gen polymorphic type in unification not in gen equa ?
 
 Maybe
 - Color for term in de Brujin index

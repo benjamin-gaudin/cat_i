@@ -13,6 +13,8 @@ let cond fmt = function
   | Ifn -> fprintf fmt "Ifn"
 
 let uop fmt = function
+  | Fst -> fprintf fmt "fst"
+  | Snd -> fprintf fmt "snd"
   | Fix -> fprintf fmt "fix"
   | HD  -> fprintf fmt "hd"
   | TL  -> fprintf fmt "tl"
@@ -26,6 +28,7 @@ let bop fmt = function
   | Sub -> fprintf fmt "-"
   | Mul -> fprintf fmt "*"
   | Con -> fprintf fmt "::"
+  | Pai -> fprintf fmt ","
 
 let nl fmt _ =
   fprintf fmt "\n"

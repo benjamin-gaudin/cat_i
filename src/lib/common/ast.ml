@@ -1,8 +1,8 @@
 type cond = Ifz | Ifn | If
 
-type uop  = Fix | HD | TL | Abs
+type uop  = Fix | HD | TL | Abs | Fst | Snd
 
-type bop  = App | And | Or | Add | Sub | Mul | Con
+type bop  = App | And | Or | Add | Sub | Mul | Con | Pai
 
 type const = Nil | Tru | Fal
 

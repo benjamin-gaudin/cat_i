@@ -32,7 +32,7 @@ let subs = subs_rec 0
 (* Return if a term is a value aka a non-reductible term *)
 let rec is_value = function
   | Cst _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Cst _, _) |
-      Bop (App, Var _, _) -> true
+      Bop (App, Var _, _) | Bop ( Pai, _, _) -> true
   | Bop (Con, t, ts) when is_value t && is_value ts -> true
   | Uop _ | Bop _ | Let _ | Cod _ -> false
 
@@ -45,12 +45,14 @@ let rec red_step t =
   | _     -> None
 
 and red_step_Uop = function
-  | Uop (HD, Bop (Con, t, _))      -> Some t
-  | Uop (TL, Bop (Con, _, ts))     -> Some ts
-  | Uop (Fix, Uop (Abs, t1))  -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
+  | Uop (Fst, Bop (Pai, t, _)) -> Some t
+  | Uop (Snd, Bop (Pai, _, t)) -> Some t
+  | Uop (HD, Bop (Con, t, _))  -> Some t
+  | Uop (TL, Bop (Con, _, ts)) -> Some ts
+  | Uop (Fix, Uop (Abs, t1))   -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
   | Uop (u, t) when not (is_value t) -> 
       Option.bind (red_step t) (fun t -> Some (Uop (u, t)))
-  | _                         -> None
+  | _                          -> None
 
 and red_step_Bop = function
   | Bop (And, Cst Tru, b) | Bop (And, b, Cst Tru) -> Some b

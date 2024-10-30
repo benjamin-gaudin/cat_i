@@ -14,6 +14,7 @@ let rec vars_of_type (ty : ptype) =
   | Var x             -> [Common.Type.Var x]
   | Lis ty            ->  vars_of_type ty
   | Arr (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
+  | Pai (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
 
 
 (* Create the equations system for the type of a terms *)
@@ -31,6 +32,16 @@ let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
 
 and gen_eq_r_Uop d e u t ty =
   match (u, t) with
+  | (Fst, t) ->
+      let ta = new_ptype() in
+      let tr = new_ptype() in
+      let eqs = gen_eq_r d e t (Pai (ta, tr)) in
+      (ty, ta) :: eqs
+  | (Snd, t) ->
+      let ta = new_ptype() in
+      let tr = new_ptype() in
+      let eqs = gen_eq_r d e t (Pai (ta, tr)) in
+      (ty, tr) :: eqs
   | (HD, t) ->
       let ta = new_ptype() in
       let eqs = gen_eq_r d e t (Lis ta) in
@@ -56,10 +67,16 @@ and gen_eq_r_Uop d e u t ty =
 
 and gen_eq_r_Bop d e b t1 t2 ty =
   match (b, t1, t2) with
+  | (Pai, t1, t2) ->
+      let ta = new_ptype() in
+      let tr = new_ptype() in
+      let eqs1 = gen_eq_r d e t1 ta in
+      let eqs2 = gen_eq_r d e t2 tr in
+      (ty, Common.Type.Pai (ta, tr)) :: eqs1 @ eqs2
   | (And, t1, t2) | (Or, t1, t2) ->
       let eqs1 = gen_eq_r d e t1 Bol in
       let eqs2 = gen_eq_r d e t2 Bol in
-      ((ty, Common.Type.Bol) :: eqs1 @ eqs2)
+      (ty, Common.Type.Bol) :: eqs1 @ eqs2
   | (Con, t, ts) ->
       let ta = new_ptype() in
       let eqs1 = gen_eq_r d e t ta in
@@ -73,7 +90,7 @@ and gen_eq_r_Bop d e b t1 t2 ty =
   | (Add, t1, t2) | (Mul, t1, t2) | (Sub, t1, t2) ->
       let eqs1 = gen_eq_r d e t1 Nat in
       let eqs2 = gen_eq_r d e t2 Nat in
-      ((ty, Common.Type.Nat) :: eqs1 @ eqs2)
+      (ty, Common.Type.Nat) :: eqs1 @ eqs2
 
 and gen_eq_r_Let d e x t1 t2 ty =
     let ta = new_ptype() in

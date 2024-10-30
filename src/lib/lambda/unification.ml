@@ -8,6 +8,7 @@ let rec occurCheck ty1 ty2 =
   | Lis tyl      -> occurCheck ty1 tyl
   | Gen (_,  ty) -> occurCheck ty1 ty
   | Arr (t1, t2) -> (occurCheck ty1 t1) || (occurCheck ty1 t2)
+  | Pai (t1, t2) -> (occurCheck ty1 t1) || (occurCheck ty1 t2)
 
 (* Substitute a type ty1 by a type ty2 in ty3 *)
 let rec subs_type ty1 ty2 ty3 =
@@ -18,6 +19,7 @@ let rec subs_type ty1 ty2 ty3 =
   | Lis tyl          -> if ty1 = ty3 then ty2 else Lis (subs_type ty1 ty2 tyl)
   | Gen (x,  ty)     -> Gen (x, subs_type ty1 ty2 ty)
   | Arr (ty1', ty2') -> Arr (subs_type ty1 ty2 ty1', subs_type ty1 ty2 ty2')
+  | Pai (ty1', ty2') -> Pai (subs_type ty1 ty2 ty1', subs_type ty1 ty2 ty2')
 
 (* Substitute a type ty by a type ty' in the equations system eq *)
 let rec subs_equ ty ty' eq =
@@ -28,10 +30,13 @@ let rec subs_equ ty ty' eq =
 
 let diff_consructor t1 t2 =
   match t1, t2 with
-  | (Arr _, Nat) | (Nat, Arr _) | (Arr _, Lis _) | (Lis _, Arr _)
+  | (Gen _, _)  | (_, Gen _) | (Var _, _) | (_, Var _) | (Nat, Nat) |
+    (Bol, Bol) | (Lis _, Lis _) | (Arr _, Arr _) | (Pai _, Pai _) -> false
+  | _  -> true
+  (* | (Arr _, Nat) | (Nat, Arr _) | (Arr _, Lis _) | (Lis _, Arr _)
     | (Nat, Lis _) | (Lis _, Nat) | (Bol, Nat) | (Bol, Arr _) 
     | (Bol, Lis _) -> true
-  | _ -> false
+  | _ -> false *)
 
 (* Step of a naive unification algorithm *)
 let rec uni_step eq goal =
@@ -52,13 +57,13 @@ let rec uni_step eq goal =
   | (ty',   Var x) :: _ when occurCheck (Var x) ty' -> None
   | (ty',   Var x) :: tail -> Some (subs_equ (Var x) (ty') tail)
   | (Arr (t, t'), Arr (u, u')) :: tail -> Some ((t, u) :: (t', u') :: tail)
+  | (Pai (t, t'), Pai (u, u')) :: tail -> Some ((t, u) :: (t', u') :: tail)
   | _              :: tail -> uni_step tail goal
   | [] -> Some ([])
 
 (* Resolve a equations systeme for a "goal"*)
 let rec resolve_rec n eq goal =
-  (* Pp.equas Format.std_formatter eq; Common.Pp.nl Format.std_formatter ();
-  print_endline "----"; *)
+  (* Format.printf "-----\n%a\n" Pp.equas eq; *)
   if n > 500 then None else
   match uni_step eq goal with
   | None -> None

@@ -25,6 +25,7 @@ match t with
   | Lis n          -> fprintf fmt "[%a]" ttype n
   | Gen (x, ty)    -> fprintf fmt "∀ %a. %a" ttype x ttype ty
   | Arr (ty1, ty2) -> fprintf fmt "(%a -> %a)" ttype ty1 ttype ty2
+  | Pai (ty1, ty2) -> fprintf fmt "(%a * %a)" ttype ty1 ttype ty2
 
 let equa fmt t = fprintf fmt "%a = %a" ttype (fst t) ttype (snd t)
 

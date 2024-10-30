@@ -12,6 +12,8 @@ rule token = parse
   (* Operations ------------------------------------------------------------- *)
   | "λ" | "l"  { LAMBDA                                                        }
   | "="        { EQUAL                                                         }
+  | "fst"      { FST                                                           }
+  | "snd"      { SND                                                           }
   | "&&"       { AND                                                           }
   | "||"       { OR                                                            }
   | "+"        { ADD                                                          }
@@ -29,6 +31,7 @@ rule token = parse
   | "//"       { comnt lexbuf                                                  }
   | space      { token lexbuf                                                  }
   | ";"        { SEMI                                                          }
+  | ","        { COMA                                                          }
   | eof        { EOF                                                           }
   (* Keywords --------- ----------------------------------------------------- *)
   | "let"      { LET                                                           }
