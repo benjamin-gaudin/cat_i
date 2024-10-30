@@ -6,9 +6,9 @@ let rec occurCheck ty1 ty2 =
   | Nat | Bol    -> false
   | Var _        -> ty1 = ty2
   | Lis tyl      -> occurCheck ty1 tyl
+  | Tpl tys      -> List.exists (occurCheck ty1) tys
   | Gen (_,  ty) -> occurCheck ty1 ty
   | Arr (t1, t2) -> (occurCheck ty1 t1) || (occurCheck ty1 t2)
-  | Pai (t1, t2) -> (occurCheck ty1 t1) || (occurCheck ty1 t2)
 
 (* Substitute a type ty1 by a type ty2 in ty3 *)
 let rec subs_type ty1 ty2 ty3 =
@@ -17,9 +17,9 @@ let rec subs_type ty1 ty2 ty3 =
   | Nat              -> Nat
   | Var _            -> if ty1 = ty3 then ty2 else ty3
   | Lis tyl          -> if ty1 = ty3 then ty2 else Lis (subs_type ty1 ty2 tyl)
+  | Tpl tys          -> Tpl (List.map (subs_type ty1 ty2) tys)
   | Gen (x,  ty)     -> Gen (x, subs_type ty1 ty2 ty)
   | Arr (ty1', ty2') -> Arr (subs_type ty1 ty2 ty1', subs_type ty1 ty2 ty2')
-  | Pai (ty1', ty2') -> Pai (subs_type ty1 ty2 ty1', subs_type ty1 ty2 ty2')
 
 (* Substitute a type ty by a type ty' in the equations system eq *)
 let rec subs_equ ty ty' eq =
@@ -31,7 +31,7 @@ let rec subs_equ ty ty' eq =
 let diff_consructor t1 t2 =
   match t1, t2 with
   | (Gen _, _)  | (_, Gen _) | (Var _, _) | (_, Var _) | (Nat, Nat) |
-    (Bol, Bol) | (Lis _, Lis _) | (Arr _, Arr _) | (Pai _, Pai _) -> false
+    (Bol, Bol) | (Lis _, Lis _) | (Arr _, Arr _) | (Tpl _, Tpl _) -> false
   | _  -> true
   (* | (Arr _, Nat) | (Nat, Arr _) | (Arr _, Lis _) | (Lis _, Arr _)
     | (Nat, Lis _) | (Lis _, Nat) | (Bol, Nat) | (Bol, Arr _) 
@@ -57,7 +57,8 @@ let rec uni_step eq goal =
   | (ty',   Var x) :: _ when occurCheck (Var x) ty' -> None
   | (ty',   Var x) :: tail -> Some (subs_equ (Var x) (ty') tail)
   | (Arr (t, t'), Arr (u, u')) :: tail -> Some ((t, u) :: (t', u') :: tail)
-  | (Pai (t, t'), Pai (u, u')) :: tail -> Some ((t, u) :: (t', u') :: tail)
+  | (Tpl ts,      Tpl us) :: tail ->
+      Some (List.fold_left2 (fun acc t u -> (t, u) :: acc) tail ts us)
   | _              :: tail -> uni_step tail goal
   | [] -> Some ([])
 

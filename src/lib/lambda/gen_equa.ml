@@ -13,8 +13,9 @@ let rec vars_of_type (ty : ptype) =
   | Bol | Nat | Gen _ -> []
   | Var x             -> [Common.Type.Var x]
   | Lis ty            ->  vars_of_type ty
+  | Tpl tys           ->
+      List.fold_left (fun acc ty -> concat_uniq (vars_of_type ty) acc) [] tys
   | Arr (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
-  | Pai (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
 
 
 (* Create the equations system for the type of a terms *)
@@ -25,23 +26,21 @@ let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
   | Nat _               -> [ty, Nat]
   | Var v               -> (try [ty, (List.assoc (d - 1 - v) e)] with
                             | Not_found -> eraise (FVNotFound t))
+  | Tpl ts              -> gen_eq_r_Tpl d e ts ty
   | Uop (u, t)          -> gen_eq_r_Uop d e u t ty
   | Bop (b, t1, t2)     -> gen_eq_r_Bop d e b t1 t2 ty
   | Let (x, t1, t2)     -> gen_eq_r_Let d e x t1 t2 ty
   | Cod (co, c, t1, t2) -> gen_eq_r_Cod d e co c t1 t2 ty
 
+and gen_eq_r_Tpl d e ts ty =
+  let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
+  let eqs = List.fold_left2 (fun acc t1 i -> (gen_eq_r d e t1 i) @ acc) [] ts inds in
+  (ty, Common.Type.Tpl (inds)) :: eqs
+
+
+
 and gen_eq_r_Uop d e u t ty =
   match (u, t) with
-  | (Fst, t) ->
-      let ta = new_ptype() in
-      let tr = new_ptype() in
-      let eqs = gen_eq_r d e t (Pai (ta, tr)) in
-      (ty, ta) :: eqs
-  | (Snd, t) ->
-      let ta = new_ptype() in
-      let tr = new_ptype() in
-      let eqs = gen_eq_r d e t (Pai (ta, tr)) in
-      (ty, tr) :: eqs
   | (HD, t) ->
       let ta = new_ptype() in
       let eqs = gen_eq_r d e t (Lis ta) in
@@ -67,16 +66,20 @@ and gen_eq_r_Uop d e u t ty =
 
 and gen_eq_r_Bop d e b t1 t2 ty =
   match (b, t1, t2) with
-  | (Pai, t1, t2) ->
-      let ta = new_ptype() in
-      let tr = new_ptype() in
-      let eqs1 = gen_eq_r d e t1 ta in
-      let eqs2 = gen_eq_r d e t2 tr in
-      (ty, Common.Type.Pai (ta, tr)) :: eqs1 @ eqs2
   | (And, t1, t2) | (Or, t1, t2) ->
       let eqs1 = gen_eq_r d e t1 Bol in
       let eqs2 = gen_eq_r d e t2 Bol in
       (ty, Common.Type.Bol) :: eqs1 @ eqs2
+  | (Prj, n, ts) ->
+    (match n, ts with
+      | Nat n, Tpl ts ->
+        if n >= List.length ts then eraise (PrjOutOfBound (Tpl ts)) else
+        let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
+        let eqs = List.fold_left2 (fun acc t1 i -> (gen_eq_r d e t1 i) @ acc) [] ts inds in
+        (ty, List.nth inds n) :: eqs
+      | _ -> eraise (PrjNotNat n))
+      
+
   | (Con, t, ts) ->
       let ta = new_ptype() in
       let eqs1 = gen_eq_r d e t ta in

@@ -4,6 +4,8 @@ type t =
   | UntypeableLet of term
   | UntypeableFix of term
   | FVNotFound    of term
+  | PrjNotNat     of term
+  | PrjOutOfBound of term
 
 exception E of t
 

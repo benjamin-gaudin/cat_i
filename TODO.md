@@ -1,7 +1,6 @@
 - Unit
 - Seq
 - Ascription
-- Tuples
 - Records
 
 

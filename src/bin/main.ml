@@ -34,7 +34,7 @@ let print_equa t =
 
 let print_nf t =
   let t' = Reduction.norm t in
-  printf "Normal Form :";
+  printf "Normal Form : ";
   match t' with
   | None    -> printf "Divergent (Timeout) \n"
   | Some t' -> printf "%a\n" Pp.term t'

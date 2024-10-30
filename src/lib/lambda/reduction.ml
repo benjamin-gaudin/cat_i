@@ -5,6 +5,7 @@ let rec lift_rec d t =
   | Cst c           -> Cst c
   | Nat n           -> Nat n
   | Var n           -> if n <= d then t else Var (n + 1)
+  | Tpl ts          -> Tpl (List.map (lift_rec d) ts)
   | Uop (Abs, t)    -> Uop (Abs, (lift_rec (d + 1) t))
   | Uop (u, t)      -> Uop (u, (lift_rec d t))
   | Bop (b, t1, t2) -> Bop (b, (lift_rec d t1), (lift_rec d t2))
@@ -19,6 +20,7 @@ let rec subs_rec d t x u =
   | Cst c           -> Cst c
   | Nat n           -> Nat n
   | Var n           -> if n = d + x then u else t
+  | Tpl ts          -> Tpl (List.map (fun t -> subs_rec d t x u) ts)
   | Uop (Abs, t')   -> Uop (Abs, (subs_rec (d + 1) t' x (lift u)))
   | Uop (uop, t)    -> Uop (uop, (subs_rec d t x u))
   | Bop (b, t1, t2) -> Bop (b, (subs_rec d t1 x u), (subs_rec d t2 x u))
@@ -32,21 +34,29 @@ let subs = subs_rec 0
 (* Return if a term is a value aka a non-reductible term *)
 let rec is_value = function
   | Cst _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Cst _, _) |
-      Bop (App, Var _, _) | Bop ( Pai, _, _) -> true
+      Bop (App, Var _, _)  -> true
   | Bop (Con, t, ts) when is_value t && is_value ts -> true
-  | Uop _ | Bop _ | Let _ | Cod _ -> false
+  | Tpl ts when List.for_all is_value ts -> true
+  | Uop _ | Bop _ | Let _ | Cod _ | Tpl _  -> false
 
 let rec red_step t = 
   match t with
+  | Tpl _ -> red_step_Tpl t
   | Uop _ -> red_step_Uop t
   | Bop _ -> red_step_Bop t
   | Let _ -> red_step_Let t
   | Cod _ -> red_step_Cod t
   | _     -> None
 
+and red_step_Tpl = function
+  | Tpl ts -> Some (Tpl (List.map
+      (fun t -> (match red_step t with
+                 | Some t' -> t'
+                 | None    -> t
+                )) ts))
+  | _ -> None
+
 and red_step_Uop = function
-  | Uop (Fst, Bop (Pai, t, _)) -> Some t
-  | Uop (Snd, Bop (Pai, _, t)) -> Some t
   | Uop (HD, Bop (Con, t, _))  -> Some t
   | Uop (TL, Bop (Con, _, ts)) -> Some ts
   | Uop (Fix, Uop (Abs, t1))   -> Some (subs t1 0 (Uop (Fix, Uop (Abs, t1))))
@@ -63,6 +73,7 @@ and red_step_Bop = function
   | Bop (Add, Nat m, Nat n) -> Some (Nat (m + n))
   | Bop (Sub, Nat m, Nat n) -> Some (Nat (m - n))
   | Bop (Mul, Nat m, Nat n) -> Some (Nat (m * n))
+  | Bop (Prj, Nat n, Tpl ts) when n < List.length ts -> Some (List.nth ts n)
   | Bop (App, Uop (Abs, t1), t2) when is_value t2 -> Some (subs t1 0 t2)
   | Bop (b,   t1,    t2   ) when not (is_value t1) -> 
       Option.bind (red_step t1) (fun t -> Some (Bop (b, t, t2)))

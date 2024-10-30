@@ -11,7 +11,7 @@
 
 
 (* Operations *)
-%token FST SND
+%token PRJ
 %token DCOLON
 %token LAMBDA
 %token AND OR
@@ -22,6 +22,7 @@
 %left MUL
 %left AND OR
 %left DCOLON
+%right PRJ
 
 (* Keywords *)
 %token FIX
@@ -47,19 +48,21 @@ value:
 | FALSE      { Cst Fal }
 
 %inline uop:
-LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL } | FST { Fst } | SND { Snd }
+LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL }
 
 %inline bop:
-| ADD { Add } | SUB { Sub } | MUL { Mul } | AND { And } | OR { Or }
+| ADD { Add } | SUB { Sub } | MUL { Mul } | AND { And } | OR { Or } | 
+  PRJ { Prj }
 
-%inline condition:
+%inline cond:
 | IF { If } | IFZ { Ifz } | IFN { Ifn }
 
 term:
 | ap=appTerm                           { ap                   }
-| u=uop t=term                         { Uop (u, t)         }
+| u=uop t=term                         { Uop (u, t)           }
+| PRJ t=unitTerm LPAR ts=seqComa RPAR  { Bop (Prj, t, Tpl ts) }
 | LET x=term EQUAL t1=term IN t2=term  { Let (x, t1, t2)      }
-| co=condition c=term THEN t1=term ELSE t2=term { Cod (co, c, t1, t2) }
+| co=cond c=term THEN t1=term ELSE t2=term { Cod (co, c, t1, t2) }
 
 appTerm:
 | t=bopTerm              { t                  }
@@ -70,12 +73,16 @@ bopTerm:
 | t1=bopTerm b=bop  t2=bopTerm { Bop (b, t1, t2) }
 
 unitTerm:
-| LPAR t=term RPAR               { t                 }
-| LPAR t1=term COMA t2=term RPAR { Bop (Pai, t1, t2) }
-| v=value                        { v                 }
-| LBRA RBRA                      { Cst Nil           }
-| LBRA s=seq RBRA                { tlist_of_list s   }
-| t=unitTerm DCOLON ts=unitTerm  { Bop (Con, t,ts)   }
+| LPAR t=term RPAR              { t               }
+| LPAR ts=seqComa RPAR          { Tpl ts          }
+| v=value                       { v               }
+| LBRA RBRA                     { Cst Nil         }
+| LBRA s=seq RBRA               { tlist_of_list s }
+| t=unitTerm DCOLON ts=unitTerm { Bop (Con, t,ts) }
+
+seqComa:
+| t1=term COMA t2=term   { [t1; t2] }
+| t=term COMA ts=seqComa { t :: ts  }
 
 seq:
 | t=term             { [t]     }
