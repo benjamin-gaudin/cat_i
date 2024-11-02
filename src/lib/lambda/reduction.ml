@@ -4,8 +4,9 @@ let rec lift_rec d t =
   match t with
   | Cst c           -> Cst c
   | Nat n           -> Nat n
+  | Lbl s           -> Lbl s
   | Var n           -> if n <= d then t else Var (n + 1)
-  | Tpl ts          -> Tpl (List.map (lift_rec d) ts)
+  | Rcd ts          -> Rcd (List.map (fun (l, t) -> (l, lift_rec d t)) ts)
   | Uop (Abs, t)    -> Uop (Abs, (lift_rec (d + 1) t))
   | Uop (u, t)      -> Uop (u, (lift_rec d t))
   | Bop (b, t1, t2) -> Bop (b, (lift_rec d t1), (lift_rec d t2))
@@ -19,8 +20,9 @@ let rec subs_rec d t x u =
   match t with
   | Cst c           -> Cst c
   | Nat n           -> Nat n
+  | Lbl s           -> Lbl s
   | Var n           -> if n = d + x then u else t
-  | Tpl ts          -> Tpl (List.map (fun t -> subs_rec d t x u) ts)
+  | Rcd ts          -> Rcd (List.map (fun (l, t) -> (l, subs_rec d t x u)) ts)
   | Uop (Abs, t')   -> Uop (Abs, (subs_rec (d + 1) t' x (lift u)))
   | Uop (uop, t)    -> Uop (uop, (subs_rec d t x u))
   | Bop (b, t1, t2) -> Bop (b, (subs_rec d t1 x u), (subs_rec d t2 x u))
@@ -34,25 +36,26 @@ let subs = subs_rec 0
 (* Return if a term is a value aka a non-reductible term *)
 let rec is_value = function
   | Cst _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Cst _, _) |
-      Bop (App, Var _, _)  -> true
+      Bop (App, Var _, _) | Lbl _ -> true
   | Bop (Con, t, ts) when is_value t && is_value ts -> true
-  | Tpl ts when List.for_all is_value ts -> true
-  | Uop _ | Bop _ | Let _ | Cod _ | Tpl _  -> false
+  | Rcd ts when List.for_all (fun (_, t) -> is_value t) ts -> true
+  | Uop _ | Bop _ | Let _ | Cod _ | Rcd _  -> false
 
 let rec red_step t = 
   match t with
-  | Tpl _ -> red_step_Tpl t
+  | Rcd _ -> red_step_Rcd t
   | Uop _ -> red_step_Uop t
   | Bop _ -> red_step_Bop t
   | Let _ -> red_step_Let t
   | Cod _ -> red_step_Cod t
   | _     -> None
 
-and red_step_Tpl = function
-  | Tpl ts -> Some (Tpl (List.map
-      (fun t -> (match red_step t with
-                 | Some t' -> t'
-                 | None    -> t
+and red_step_Rcd = function
+  | Rcd ts when not (is_value (Rcd ts)) -> 
+      Some (Rcd (List.map
+      (fun (l, t) -> (match red_step t with
+                 | Some t' -> (l, t')
+                 | None    -> (l, t)
                 )) ts))
   | _ -> None
 
@@ -73,7 +76,11 @@ and red_step_Bop = function
   | Bop (Add, Nat m, Nat n) -> Some (Nat (m + n))
   | Bop (Sub, Nat m, Nat n) -> Some (Nat (m - n))
   | Bop (Mul, Nat m, Nat n) -> Some (Nat (m * n))
-  | Bop (Prj, Nat n, Tpl ts) when n < List.length ts -> Some (List.nth ts n)
+  | Bop (Prj, Nat n, Rcd ts) when n < List.length ts -> Some (List.nth ts n |> snd)
+  | Bop (Prj, Nat _, Rcd _) -> failwith "TODO projection with integer too high"
+  | Bop (Prj, Lbl s, Rcd ts) -> 
+      (try Some (List.assoc s ts)
+       with Not_found -> failwith "TODO projection with label not found")
   | Bop (App, Uop (Abs, t1), t2) when is_value t2 -> Some (subs t1 0 t2)
   | Bop (b,   t1,    t2   ) when not (is_value t1) -> 
       Option.bind (red_step t1) (fun t -> Some (Bop (b, t, t2)))

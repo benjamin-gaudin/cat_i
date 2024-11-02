@@ -4,8 +4,10 @@
   open Common.Error
 }
 
+let chr   = ['a'-'z']
 let num   = ['0'-'9']+
 let space = [' ' '\n']+
+let lbl   = chr (chr | '_' | num)*
 
 
 rule token = parse
@@ -22,11 +24,13 @@ rule token = parse
   | "HD"        { HD                                                           }
   | "TL"        { TL                                                           }
   (* Special characters ----------------------------------------------------- *)
-  | "i"         { IDI                                                          }
+  | "_"         { IDI                                                          }
   | "("         { LPAR                                                         }
   | ")"         { RPAR                                                         }
-  | "["         { LBRA                                                         }
-  | "]"         { RBRA                                                         }
+  | "["         { LSBR                                                         }
+  | "]"         { RSBR                                                         }
+  | "{"         { LBRA                                                         }
+  | "}"         { RBRA                                                         }
   | "//"        { comnt lexbuf                                                 }
   | space       { token lexbuf                                                 }
   | ";"         { SEMI                                                         }
@@ -47,6 +51,7 @@ rule token = parse
   | "true"      { TRUE                                                         }
   | "false"     { FALSE                                                        }
   | num as n    { CNAT (int_of_string n)                                       }
+  | lbl as s    { LBL s                                                        }
   (* Unknown ---------------------------------------------------------------- *)
   | _           { raise (E (ELexing (lexeme lexbuf)))                          }
 

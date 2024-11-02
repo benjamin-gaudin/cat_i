@@ -1,7 +1,12 @@
 - Unit
 - Seq
 - Ascription
-- Records
+
+- Check type name record label ?
+- dont care of order in record (need subtyping)
+
+- Option type list in
+- Option equa list in
 
 
 Maybe

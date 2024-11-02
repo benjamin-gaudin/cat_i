@@ -1,3 +1,4 @@
+open Common.Utils
 open Common.Type
 open Common.Ast
 open Error
@@ -12,10 +13,20 @@ let rec vars_of_type (ty : ptype) =
   match ty with
   | Bol | Nat | Gen _ -> []
   | Var x             -> [Common.Type.Var x]
-  | Lis ty            ->  vars_of_type ty
-  | Tpl tys           ->
-      List.fold_left (fun acc ty -> concat_uniq (vars_of_type ty) acc) [] tys
+  | Lis ty            -> vars_of_type ty
+  | Rcd tys           ->
+      List.fold_left
+        (fun acc (_, ty) -> concat_uniq (vars_of_type ty) acc) [] tys
   | Arr (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
+
+let rec rm_gen (ty : ptype) =
+  match ty with
+  | Bol | Nat         -> ty
+  | Gen (_, tys)      -> rm_gen tys
+  | Var x             -> Var x
+  | Lis ty            -> rm_gen ty
+  | Rcd tys           -> Rcd (List.map (fun (l, ty) -> (l, (rm_gen ty))) tys)
+  | Arr (ty1, ty2)    -> Arr (rm_gen ty1, rm_gen ty2)
 
 
 (* Create the equations system for the type of a terms *)
@@ -24,20 +35,23 @@ let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
   | Cst Tru | Cst Fal   -> [ty, Bol]
   | Cst Nil             -> [ty, Lis (new_ptype ())]
   | Nat _               -> [ty, Nat]
+  | Lbl _               -> failwith "ERROR : Typing a label"
   | Var v               -> (try [ty, (List.assoc (d - 1 - v) e)] with
                             | Not_found -> eraise (FVNotFound t))
-  | Tpl ts              -> gen_eq_r_Tpl d e ts ty
+  | Rcd ts              -> gen_eq_r_Rcd d e ts ty
   | Uop (u, t)          -> gen_eq_r_Uop d e u t ty
   | Bop (b, t1, t2)     -> gen_eq_r_Bop d e b t1 t2 ty
   | Let (x, t1, t2)     -> gen_eq_r_Let d e x t1 t2 ty
   | Cod (co, c, t1, t2) -> gen_eq_r_Cod d e co c t1 t2 ty
 
-and gen_eq_r_Tpl d e ts ty =
+and gen_eq_r_Rcd d e ts ty =
   let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
-  let eqs = List.fold_left2 (fun acc t1 i -> (gen_eq_r d e t1 i) @ acc) [] ts inds in
-  (ty, Common.Type.Tpl (inds)) :: eqs
-
-
+  let lbls = assoc_keys_r ts in
+  let eqs = List.fold_left2
+    (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
+  let fields = List.fold_left2 
+    (fun acc l1 l2 -> (l1, l2) :: acc ) [] lbls (List.rev inds) in
+  (ty, Common.Type.Rcd (fields)) :: eqs
 
 and gen_eq_r_Uop d e u t ty =
   match (u, t) with
@@ -70,16 +84,43 @@ and gen_eq_r_Bop d e b t1 t2 ty =
       let eqs1 = gen_eq_r d e t1 Bol in
       let eqs2 = gen_eq_r d e t2 Bol in
       (ty, Common.Type.Bol) :: eqs1 @ eqs2
-  | (Prj, n, ts) ->
-    (match n, ts with
-      | Nat n, Tpl ts ->
-        if n >= List.length ts then eraise (PrjOutOfBound (Tpl ts)) else
+  | (Prj, t, ts) ->
+    (match t, ts with
+      | Nat n, Rcd ts ->
+        if n >= List.length ts then eraise (PrjOutOfBound (Rcd ts)) else
         let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
-        let eqs = List.fold_left2 (fun acc t1 i -> (gen_eq_r d e t1 i) @ acc) [] ts inds in
+        let eqs = List.fold_left2
+          (fun acc (_, t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
         (ty, List.nth inds n) :: eqs
-      | _ -> eraise (PrjNotNat n))
-      
-
+      | Lbl s, Rcd ts ->
+        let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
+        let lbls = assoc_keys_r ts in (* TODO projection with label not found*)
+        let eqs = List.fold_left2
+          (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
+        let fields = List.fold_left2 
+          (fun acc l1 l2 -> (l1, l2) :: acc ) [] lbls inds in
+        (ty, List.assoc s fields) :: eqs
+      | Nat n, Var x ->
+          let record_in_e = rm_gen (List.assoc (d - 1 - x) e) in
+          (match record_in_e with
+          | Rcd ty_record  ->
+              let ty_x = snd (List.nth ty_record n) in
+              let fvs = vars_of_type ty_x in
+              let ty_x_gen = List.fold_left
+                (fun acc ty -> (Gen(ty, acc))) ty_x fvs in
+              [ty, ty_x_gen]
+          | _ -> failwith "TODO projection on variable which is not a record")
+      | Lbl s, Var x ->
+          let record_in_e = rm_gen (List.assoc (d - 1 - x) e) in
+          (match record_in_e with
+          | Rcd ty_record  -> 
+              let ty_x = List.assoc s ty_record in
+              let fvs = vars_of_type ty_x in
+              let ty_x_gen = List.fold_left
+                (fun acc ty -> (Gen(ty, acc))) ty_x fvs in
+              [ty, ty_x_gen]
+          | _ -> failwith "TODO projection on variable which is not a record")
+      | _ -> eraise (PrjNotNat t)) (* TODO or label and record*)
   | (Con, t, ts) ->
       let ta = new_ptype() in
       let eqs1 = gen_eq_r d e t ta in

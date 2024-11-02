@@ -7,9 +7,10 @@ type bop  = App | And | Or | Add | Sub | Mul | Con | Prj
 type const = Nil | Tru | Fal
 
 type term = Cst of const
+          | Lbl of string
           | Nat of int
           | Var of int
-          | Tpl of term list
+          | Rcd of (string * term)list
           | Uop of uop * term
           | Bop of bop * term * term
           | Let of term * term * term

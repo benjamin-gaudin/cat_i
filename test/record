@@ -1,0 +1,21 @@
+// (prj 1 {identity = λ _0, double = λ 2 * _0}) 5 ;;
+// {identity = λ _0, double = λ 2 * _0};;
+// (prj 1 {λ _0, λ 2 * _0}) 5 ;;
+// (prj 1 (λ _0, λ 2 * _0)) 5 ;;
+
+// (prj 1 {identity = prj 1 (λ _0 _0, λ _0), double = λ 2 * _0}) 5 ;; e;
+// {identity = prj 1 (λ _0 _0, λ _0), double = 2 } ;; e;
+
+// prj 1 {delta = λ _0 _0, two = 2};;
+
+// {λ 2 * _0, 2};; e;
+
+// let _3 = {λ _0, 2} in
+// prj 1 _3;; e;
+
+// let _3 = {identity = λ _0, one = 1, three = 3, two = 2} in
+// prj two _3;; e;
+
+let _0 = {identity = λ _0, deux = λ λ 3} in
+(prj identity _0) 3;; e;
+

@@ -1,5 +1,5 @@
-open Error
 open Format
+open Error
 open Ast
 
 let const fmt = function

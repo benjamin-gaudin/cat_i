@@ -1,11 +1,11 @@
 %{
   open Common.Options
-  open Common.Ultils
+  open Common.Utils
   open Common.Ast
 %}
 
 (* Special characters *)
-%token LPAR RPAR LBRA RBRA 
+%token LPAR RPAR LSBR RSBR LBRA RBRA
 %token COMA SEMI
 %token IDI EQUAL EOF
 
@@ -32,6 +32,7 @@
 (* Values *)
 %token TRUE FALSE
 %token <int>    CNAT
+%token <string> LBL
 
 (* Options *)
 %token OPE
@@ -58,11 +59,13 @@ LAMBDA { Abs } | FIX { Fix } | HD { HD } | TL { TL }
 | IF { If } | IFZ { Ifz } | IFN { Ifn }
 
 term:
-| ap=appTerm                           { ap                   }
-| u=uop t=term                         { Uop (u, t)           }
-| PRJ t=unitTerm LPAR ts=seqComa RPAR  { Bop (Prj, t, Tpl ts) }
-| LET x=term EQUAL t1=term IN t2=term  { Let (x, t1, t2)      }
-| co=cond c=term THEN t1=term ELSE t2=term { Cod (co, c, t1, t2) }
+| ap=appTerm                               { ap                       }
+| u=uop t=term                             { Uop (u, t)               }
+| PRJ i=LBL rs=unitTerm            { Bop (Prj, Lbl i, rs) }
+| PRJ t=unitTerm  rs=unitTerm       { Bop (Prj, t,  rs)     }
+// | PRJ t=unitTerm LPAR rs=unitTerm RPAR        { Bop (Prj, t,  rs)     }
+| LET x=term EQUAL t1=term IN t2=term      { Let (x, t1, t2)          }
+| co=cond c=term THEN t1=term ELSE t2=term { Cod (co, c, t1, t2)      }
 
 appTerm:
 | t=bopTerm              { t                  }
@@ -74,15 +77,25 @@ bopTerm:
 
 unitTerm:
 | LPAR t=term RPAR              { t               }
-| LPAR ts=seqComa RPAR          { Tpl ts          }
+| LPAR ts=tuple RPAR            { Rcd ts          }
+| LBRA ts=record RBRA           { Rcd ts          }
 | v=value                       { v               }
-| LBRA RBRA                     { Cst Nil         }
-| LBRA s=seq RBRA               { tlist_of_list s }
+| LSBR RSBR                     { Cst Nil         }
+| LSBR s=seq RSBR               { tlist_of_list s }
 | t=unitTerm DCOLON ts=unitTerm { Bop (Con, t,ts) }
 
-seqComa:
-| t1=term COMA t2=term   { [t1; t2] }
-| t=term COMA ts=seqComa { t :: ts  }
+recordField:
+| l=LBL EQUAL t=term { (l,t)  }
+| t=term             { ("",t) }
+
+record:
+| r=recordField                { [r]     }
+| r=recordField COMA rs=record { r :: rs }
+
+tuple:
+| t=term COMA          { [("", t)]           }
+| t=term COMA t2=term  { [("", t); ("", t2)] }
+| t=term COMA ts=tuple { ("", t) :: ts       }
 
 seq:
 | t=term             { [t]     }

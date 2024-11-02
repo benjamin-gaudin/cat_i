@@ -2,7 +2,7 @@ type ptype = Nat
            | Bol
            | Var of string
            | Lis of ptype
-           | Tpl of ptype list
+           | Rcd of (string * ptype) list
            | Gen of ptype * ptype
            | Arr of ptype * ptype
 
