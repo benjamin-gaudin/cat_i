@@ -2,6 +2,10 @@ open Ast
 
 let assoc_keys_r l = List.fold_left (fun acc (k,_) -> k :: acc) [] l
 
+let rec l_is_uniq = function
+  | [] -> true
+  | h :: tail -> not (List.mem h tail) && l_is_uniq tail
+
 let rec tlist_of_list l =
   match l with
   | [] -> Cst Nil

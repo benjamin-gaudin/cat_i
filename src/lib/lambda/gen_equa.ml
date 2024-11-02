@@ -47,6 +47,8 @@ let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
 and gen_eq_r_Rcd d e ts ty =
   let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
   let lbls = assoc_keys_r ts in
+  if not (l_is_uniq lbls) then 
+    failwith "TODO labels of the records are not uniq" else
   let eqs = List.fold_left2
     (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
   let fields = List.fold_left2 
