@@ -17,12 +17,18 @@
 // let _0 = {one=1, 2} in π one _0;;
 
 // let _0 = (<some = λ _0> as <some : (x -> x), none : unit>) in
-let _0 = (<none = ()> as <some : (x -> x), none : unit>) in
-case _0 of
-| <some> -> let _3 =
-              let _2 = {f = _0, 2} in
-              ((π f _2) (π f _2)) (π 1 _2)
-            in ()
-| <none> -> _0
-;; e;
+// let _0 = (<none = ()> as <some : (x -> x), none : unit>) in
+// case _0 of
+// | <some> -> let _3 =
+              // let _2 = {f = _0, 2} in
+              // ((π f _2) (π f _2)) (π 1 _2)
+            // in ()
+// | <none> -> _0
+// ;; e;
 
+let _0 = (<some = λ _0> as <some : (x -> x), none : unit>) in
+case _0 of
+| <some> -> let _2 = {f = _0, 2} in
+              ((π f _2) (π f _2)) (π 1 _2)
+| <none> -> 2
+;; e;

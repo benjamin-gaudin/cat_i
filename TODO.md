@@ -1,9 +1,13 @@
-- Unit
 - Seq
 
 - dont care of order in record (need subtyping)
 
-- Option type list in
+- Better parser
+- Match pattern
+- Better message error
+- Recursive type
+
+- Option type list in (with indent pp)
 - Option equa list in
 
 

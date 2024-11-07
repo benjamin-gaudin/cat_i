@@ -51,11 +51,9 @@ and caseField fmt field =
   fprintf fmt "<%s=i0> -> %a" l term t
 
 let equa fmt t = fprintf fmt "%a = %a" ttype (fst t) ttype (snd t)
-
 let equas fmt t = fprintf fmt "%a" (pp_print_list ~pp_sep:nl equa) t
 
 let env_aux fmt t = fprintf fmt "%d : %a" (fst t) ttype (snd t)
-
 let env fmt t = fprintf fmt "%a" (pp_print_list ~pp_sep:nl env_aux) t
 
 let err fmt = function

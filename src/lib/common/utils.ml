@@ -3,10 +3,15 @@ open Ast
 let assoc_keys  l = List.map (fun (k, _) -> k) l
 let assoc_value l = List.map (fun (_, v) -> v) l
 
+let rec concat_uniq l1 l2 =
+  match l1 with
+  | [] -> l2
+  | x :: xs when List.mem x l2 -> concat_uniq xs l2
+  | x :: xs ->  x :: concat_uniq xs l2
+
 let l_is_uniq = function
   | []      -> true
   | x :: xs -> List.for_all (fun y -> x = y) xs
-
 
 let rec l_no_duplicate = function
   | [] -> true
