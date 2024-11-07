@@ -3,6 +3,7 @@ type ptype = Nat
            | Var of string
            | Lis of ptype
            | Rcd of (string * ptype) list
+           | Vrt of (string * ptype) list
            | Gen of ptype * ptype
            | Arr of ptype * ptype
 

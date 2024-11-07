@@ -14,17 +14,22 @@ rule token = parse
   (* Operations ------------------------------------------------------------- *)
   | "λ" | "l"   { LAMBDA                                                       }
   | "="         { EQUAL                                                        }
+  | "<"         { LT                                                           }
+  | ">"         { GT                                                           }
   | "prj" | "π" { PRJ                                                          }
   | "&&"        { AND                                                          }
   | "||"        { OR                                                           }
-  | "+"         { ADD                                                          }
+  | "+"         { PLUS                                                         }
   | "-"         { SUB                                                          }
-  | "*"         { MUL                                                          }
+  | "*"         { STAR                                                         }
+  | ":"         { COLON                                                        }
   | "::"        { DCOLON                                                       }
   | "HD"        { HD                                                           }
   | "TL"        { TL                                                           }
   (* Special characters ----------------------------------------------------- *)
   | "_"         { IDI                                                          }
+  | "->"        { RIGHT                                                        }
+  | "|"         { VBAR                                                         }
   | "("         { LPAR                                                         }
   | ")"         { RPAR                                                         }
   | "["         { LSBR                                                         }
@@ -35,6 +40,7 @@ rule token = parse
   | space       { token lexbuf                                                 }
   | ";"         { SEMI                                                         }
   | ","         { COMA                                                         }
+  | "."         { DOT                                                          }
   | eof         { EOF                                                          }
   (* Keywords --------- ----------------------------------------------------- *)
   | "let"       { LET                                                          }
@@ -43,10 +49,17 @@ rule token = parse
   | "ifz"       { IFZ                                                          }
   | "ifn"       { IFN                                                          }
   | "if"        { IF                                                           }
+  | "as"        { AS                                                           }
   | "then"      { THEN                                                         }
   | "else"      { ELSE                                                         }
+  | "case"      { CASE                                                         }
+  | "of"        { OF                                                           }
   (* options ---------------------------------------------------------------- *)
   | "e" | "-e"  { OPE                                                          }
+  (* types  ----------------------------------------------------------------- *)
+  | "nat"          { NAT                                                       }
+  | "bool"         { BOOL                                                      }
+  | "∀" | "forall" { FORALL                                                    }
   (* Values ----------------------------------------------------------------- *)
   | "true"      { TRUE                                                         }
   | "false"     { FALSE                                                        }

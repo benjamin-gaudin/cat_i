@@ -32,10 +32,10 @@ let nl fmt _ =
   fprintf fmt "\n"
 
 let semi fmt _ =
-  fprintf fmt ";"
+  fprintf fmt "; "
 
 let colon fmt _ =
-  fprintf fmt ","
+  fprintf fmt ", "
 
 let tab fmt _ =
   fprintf fmt "\t"

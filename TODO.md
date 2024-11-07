@@ -1,8 +1,6 @@
 - Unit
 - Seq
-- Ascription
 
-- Check type name record label ?
 - dont care of order in record (need subtyping)
 
 - Option type list in

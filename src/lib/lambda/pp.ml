@@ -5,27 +5,6 @@ open Common.Pp
 open Format
 open Error
 
-let rec term fmt = function
-  | Cst c           -> fprintf fmt "%a" const c
-  | Nat n           -> fprintf fmt "%d" n
-  | Lbl s           -> fprintf fmt "%s" s
-  | Var n           -> fprintf fmt "ᵢ%d" n
-  | Rcd ts        -> fprintf fmt "{%a}" (pp_print_list ~pp_sep:colon rcdfieldv) ts
-  | Uop (u, t)      -> fprintf fmt "%a %a" uop u term t
-  | Bop (Prj, n, t) -> fprintf fmt "π %a %a" term n term t
-  | Bop (Con, t, ts)->
-      fprintf fmt "[%a]" (pp_print_list ~pp_sep:semi term) (list_of_tlist (Bop (Con, t,ts)))
-  | Bop (b, t1, t2) -> fprintf fmt "(%a %a %a)" term t1 bop b term t2
-  | Let (x, t1, t2) -> fprintf fmt "let %a = %a in %a" term x term t1 term t2
-  | Cod (co, c, t1, t2) -> 
-      fprintf fmt "%a %a then %a else %a" cond co term c term t1 term t2
-
-and rcdfieldv fmt field =
-  let (l, t) =  field in
-  if l = "" then fprintf fmt "%a" term t
-  else fprintf fmt "%s = %a" l term t
-
-
 let rec ttype fmt (t : ptype) =
 match t with
   | Nat            -> fprintf fmt "Nat"
@@ -33,6 +12,7 @@ match t with
   | Var s          -> fprintf fmt "%s" s
   | Lis n          -> fprintf fmt "[%a]" ttype n
   | Rcd tys        -> fprintf fmt "{%a}" (pp_print_list ~pp_sep:colon rcdfieldt) tys
+  | Vrt tys        -> fprintf fmt "<%a>" (pp_print_list ~pp_sep:colon rcdfieldt) tys
   | Gen (x, ty)    -> fprintf fmt "∀ %a. %a" ttype x ttype ty
   | Arr (ty1, ty2) -> fprintf fmt "(%a -> %a)" ttype ty1 ttype ty2
 
@@ -40,6 +20,34 @@ and rcdfieldt fmt field =
   let (l, t) =  field in
   if l = "" then fprintf fmt "%a" ttype t
   else fprintf fmt "%s : %a" l ttype t
+
+let rec term fmt = function
+  | Cst c           -> fprintf fmt "%a" const c
+  | Nat n           -> fprintf fmt "%d" n
+  | Lbl s           -> fprintf fmt "%s" s
+  | Var n           -> fprintf fmt "ᵢ%d" n
+  | Rcd ts          -> fprintf fmt "{%a}" (pp_print_list ~pp_sep:colon rcdfieldv) ts
+  | Vrt ts          -> fprintf fmt "<%a>" (pp_print_list ~pp_sep:colon rcdfieldv) ts
+  | Uop (u, t)      -> fprintf fmt "%a %a" uop u term t
+  | As  (t, ty)     -> fprintf fmt "%a as %a" term t ttype ty
+  | Bop (Prj, n, t) -> fprintf fmt "π %a %a" term n term t
+  | Bop (Con, t, ts)->
+      fprintf fmt "[%a]" (pp_print_list ~pp_sep:semi term) (list_of_tlist (Bop (Con, t,ts)))
+  | Bop (b, t1, t2) -> fprintf fmt "(%a %a %a)" term t1 bop b term t2
+  | Let (x, t1, t2) -> fprintf fmt "let %a = %a in %a" term x term t1 term t2
+  | Cod (co, c, t1, t2) -> 
+      fprintf fmt "%a %a then %a else %a" cond co term c term t1 term t2
+  | Cas (t, ts) ->
+      fprintf fmt "case %a of\n%a\n" term t (pp_print_list ~pp_sep:nl caseField) ts
+
+and rcdfieldv fmt field =
+  let (l, t) =  field in
+  if l = "" then fprintf fmt "%a" term t
+  else fprintf fmt "%s = %a" l term t
+
+and caseField fmt field =
+  let (l, t) =  field in
+  fprintf fmt "<%s=i0> -> %a" l term t
 
 let equa fmt t = fprintf fmt "%a = %a" ttype (fst t) ttype (snd t)
 

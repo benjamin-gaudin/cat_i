@@ -1,0 +1,26 @@
+// case (<leaf=1> as <leaf : nat, not_leaf : {one:nat, two:nat}>) of
+// | <leaf>     ->  _0 * 2
+// | <not_leaf> ->  (prj 0 _0) * 2
+// ;;
+
+
+// (<leaf=1> as <leaf : nat, not_leaf : {one:nat, two:nat}>);; e;
+
+// let _0 = (<leaf=1> as <leaf : nat, not_leaf : {one:nat, two:nat}>) in
+// case _0 of
+// | <leaf>     ->  _0 * 2
+// | <not_leaf> ->  (prj 0 _0) * 2
+// ;;
+
+// let _2 = {f = λ _0, n = 2} in (π f _2) 2;; e;
+
+// let _0 = {one=1, 2} in π one _0;;
+
+let _0 = (<some = λ _0> as <some : (x -> x), none : nat>) in
+// let _0 = (<none = 2> as <some : (x -> x), none : nat>) in
+case _0 of
+| <some> -> let _2 = {f = _0, 2} in
+            ((π f _2) (π f _2)) (π 1 _2)
+| <none> -> _0 * 2
+;; e;
+

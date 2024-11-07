@@ -1,3 +1,5 @@
+open Type
+
 type cond = Ifz | Ifn | If
 
 type uop  = Fix | HD | TL | Abs
@@ -10,7 +12,10 @@ type term = Cst of const
           | Lbl of string
           | Nat of int
           | Var of int
-          | Rcd of (string * term)list
+          | Rcd of (string * term) list
+          | Vrt of (string * term) list
+          | Cas of term * (string * term) list
+          | As  of term * ptype
           | Uop of uop * term
           | Bop of bop * term * term
           | Let of term * term * term

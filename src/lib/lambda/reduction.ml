@@ -7,14 +7,19 @@ let rec lift_rec d t =
   | Lbl s           -> Lbl s
   | Var n           -> if n <= d then t else Var (n + 1)
   | Rcd ts          -> Rcd (List.map (fun (l, t) -> (l, lift_rec d t)) ts)
+  | Vrt ts          -> Vrt (List.map (fun (l, t) -> (l, lift_rec d t)) ts)
+  | As  (t, ty)     -> As  (lift_rec d t, ty)
   | Uop (Abs, t)    -> Uop (Abs, (lift_rec (d + 1) t))
   | Uop (u, t)      -> Uop (u, (lift_rec d t))
   | Bop (b, t1, t2) -> Bop (b, (lift_rec d t1), (lift_rec d t2))
   | Let (x, t1, t2) -> Let ((lift_rec d x), (lift_rec d t1), (lift_rec d t2))
   | Cod (cond, c, t1, t2) ->
       Cod (cond, (lift_rec d c), (lift_rec d t1), (lift_rec d t2))
+  | Cas (t, ts)     -> Cas
+    (lift_rec d t, List.map (fun (l, t) -> (l, lift_rec (d + 1) t)) ts)
 
 let lift = lift_rec 0
+
 
 let rec subs_rec d t x u =
   match t with
@@ -23,6 +28,8 @@ let rec subs_rec d t x u =
   | Lbl s           -> Lbl s
   | Var n           -> if n = d + x then u else t
   | Rcd ts          -> Rcd (List.map (fun (l, t) -> (l, subs_rec d t x u)) ts)
+  | Vrt ts          -> Vrt (List.map (fun (l, t) -> (l, subs_rec d t x u)) ts)
+  | As  (t, ty)     -> As  (subs_rec d t x u, ty)
   | Uop (Abs, t')   -> Uop (Abs, (subs_rec (d + 1) t' x (lift u)))
   | Uop (uop, t)    -> Uop (uop, (subs_rec d t x u))
   | Bop (b, t1, t2) -> Bop (b, (subs_rec d t1 x u), (subs_rec d t2 x u))
@@ -30,24 +37,30 @@ let rec subs_rec d t x u =
       Let (subs_rec d v x u, subs_rec d t1 x u, subs_rec d t2 x u)
   | Cod (cond, c, t1, t2) -> 
       Cod (cond, subs_rec d c x u, subs_rec d t1 x u, subs_rec d t2 x u)
+  | Cas (t, ts) -> Cas
+    (subs_rec d t x u, List.map (fun (l, t) -> (l, subs_rec (d + 1) t x u)) ts)
 
 let subs = subs_rec 0
+
 
 (* Return if a term is a value aka a non-reductible term *)
 let rec is_value = function
   | Cst _ | Nat _ | Var _ | Uop (Abs, _) | Bop (App, Cst _, _) |
-      Bop (App, Var _, _) | Lbl _ -> true
+      Bop (App, Var _, _) | Lbl _ -> true 
   | Bop (Con, t, ts) when is_value t && is_value ts -> true
   | Rcd ts when List.for_all (fun (_, t) -> is_value t) ts -> true
-  | Uop _ | Bop _ | Let _ | Cod _ | Rcd _  -> false
+  | Vrt ts when List.for_all (fun (_, t) -> is_value t) ts -> true
+  | Uop _ | Bop _ | Let _ | Cod _ | Rcd _ | Cas _ | As _ | Vrt _ -> false
 
 let rec red_step t = 
   match t with
   | Rcd _ -> red_step_Rcd t
+  | As  _ -> red_step_As  t
   | Uop _ -> red_step_Uop t
   | Bop _ -> red_step_Bop t
   | Let _ -> red_step_Let t
   | Cod _ -> red_step_Cod t
+  | Cas _ -> red_step_Cas t
   | _     -> None
 
 and red_step_Rcd = function
@@ -58,6 +71,10 @@ and red_step_Rcd = function
                  | None    -> (l, t)
                 )) ts))
   | _ -> None
+
+and red_step_As = function
+  | As (t, _) -> Some t
+  | _         -> None
 
 and red_step_Uop = function
   | Uop (HD, Bop (Con, t, _))  -> Some t
@@ -106,6 +123,12 @@ and red_step_Let = function
       Option.bind (red_step t1) (fun t -> Some (Let (x, t, t2)))
   | Let (Var n, t1, t2) -> Some (subs t2 n t1)
   | _               -> None
+
+and red_step_Cas = function
+  | Cas (t, ts) when not (is_value t) ->
+      Option.bind (red_step t) (fun t -> Some (Cas (t, ts)))
+  | Cas (Vrt [(l, t)], ts) -> Some (subs (List.assoc l ts) 0 t)
+  | _                      -> None
 
 (* Retourne the normal form of a term *)
 let rec norm_rec n t =

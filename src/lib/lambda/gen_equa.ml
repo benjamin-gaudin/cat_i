@@ -3,6 +3,7 @@ open Common.Type
 open Common.Ast
 open Error
 
+
 let rec concat_uniq l1 l2 =
   match l1 with
   | [] -> l2
@@ -17,6 +18,9 @@ let rec vars_of_type (ty : ptype) =
   | Rcd tys           ->
       List.fold_left
         (fun acc (_, ty) -> concat_uniq (vars_of_type ty) acc) [] tys
+  | Vrt tys           ->
+      List.fold_left
+        (fun acc (_, ty) -> concat_uniq (vars_of_type ty) acc) [] tys
   | Arr (ty1, ty2)    -> concat_uniq (vars_of_type ty1) (vars_of_type ty2)
 
 let rec rm_gen (ty : ptype) =
@@ -26,6 +30,7 @@ let rec rm_gen (ty : ptype) =
   | Var x             -> Var x
   | Lis ty            -> rm_gen ty
   | Rcd tys           -> Rcd (List.map (fun (l, ty) -> (l, (rm_gen ty))) tys)
+  | Vrt tys           -> Rcd (List.map (fun (l, ty) -> (l, (rm_gen ty))) tys) (* OK ? *)
   | Arr (ty1, ty2)    -> Arr (rm_gen ty1, rm_gen ty2)
 
 
@@ -39,21 +44,60 @@ let rec gen_eq_r d e (t : term) ty : (ptype * ptype) list =
   | Var v               -> (try [ty, (List.assoc (d - 1 - v) e)] with
                             | Not_found -> eraise (FVNotFound t))
   | Rcd ts              -> gen_eq_r_Rcd d e ts ty
+  | Vrt ts              -> gen_eq_r_Vrt d e ts ty 
+  | Cas (v, ts)         -> gen_eq_r_Cas d e v ts ty
+  | As  (_, typ)        -> [(ty, typ)]
   | Uop (u, t)          -> gen_eq_r_Uop d e u t ty
   | Bop (b, t1, t2)     -> gen_eq_r_Bop d e b t1 t2 ty
   | Let (x, t1, t2)     -> gen_eq_r_Let d e x t1 t2 ty
   | Cod (co, c, t1, t2) -> gen_eq_r_Cod d e co c t1 t2 ty
 
+and get_type d e t err =
+  let ta = new_ptype() in
+  let eq = gen_eq_r d e t ta in 
+  let vrt_t0 = Unification.resolve eq ta in
+  match vrt_t0  with
+    | Some ty_t0 -> snd (List.hd ty_t0)
+    | None -> eraise err
+
 and gen_eq_r_Rcd d e ts ty =
-  let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
-  let lbls = assoc_keys_r ts in
-  if not (l_is_uniq lbls) then 
-    failwith "TODO labels of the records are not uniq" else
+  let new_vars = List.map (fun _ -> new_ptype()) ts in
+  let lbls = assoc_keys ts in
+  if not (l_no_duplicate lbls) then 
+    failwith "TODO labels of the records are not unique" else
+  let fields = zip lbls new_vars in
   let eqs = List.fold_left2
-    (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
-  let fields = List.fold_left2 
-    (fun acc l1 l2 -> (l1, l2) :: acc ) [] lbls (List.rev inds) in
-  (ty, Common.Type.Rcd (fields)) :: eqs
+    (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts new_vars in
+  (ty, Rcd fields) :: eqs
+
+and gen_eq_r_Vrt d e ts ty =
+  let new_vars = List.map (fun _ -> new_ptype()) ts in
+  let lbls = assoc_keys ts in
+  if not (l_no_duplicate lbls) then 
+    failwith "TODO labels of the variant are not unique" else
+  let vrt = zip lbls new_vars in
+  let eqs = List.fold_left2
+    (fun acc var (_,t) -> gen_eq_r d e t var @ acc) [] new_vars ts in
+  (ty, Vrt vrt) :: eqs
+
+and gen_eq_r_Cas d e v ts ty =
+  let vrt_t0 = get_type d e v (PrjNotNat v) in
+  match vrt_t0 with
+  | Vrt vrt_t0 -> 
+      let list_typs =
+      List.fold_left2
+        (fun acc (l_t0, ty_t0) (l, t) ->
+         if not (l_t0 = l) then failwith "TODO Case not same type" else
+         let ta = new_ptype() in
+         let eq = gen_eq_r (d + 1) ((d, ty_t0) :: e) t ta in 
+         (ta, eq) :: acc
+        ) [] vrt_t0 ts
+      in
+      (* all branches and return type have same type @ equations for all branches *)
+        list_to_l_pair_trans (ty :: assoc_keys (list_typs)) @
+        List.fold_left (fun acc (_,y) -> y @ acc) [] list_typs
+  | _       -> failwith "TODO case on type different from variant"
+
 
 and gen_eq_r_Uop d e u t ty =
   match (u, t) with
@@ -90,17 +134,16 @@ and gen_eq_r_Bop d e b t1 t2 ty =
     (match t, ts with
       | Nat n, Rcd ts ->
         if n >= List.length ts then eraise (PrjOutOfBound (Rcd ts)) else
-        let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
+        let new_vars = List.map (fun _ -> new_ptype()) ts in
         let eqs = List.fold_left2
-          (fun acc (_, t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
-        (ty, List.nth inds n) :: eqs
+          (fun acc (_, t) i -> (gen_eq_r d e t i) @ acc) [] ts new_vars in
+        (ty, List.nth new_vars n) :: eqs
       | Lbl s, Rcd ts ->
-        let inds = List.init (List.length ts) (fun _ -> new_ptype()) in
-        let lbls = assoc_keys_r ts in (* TODO projection with label not found*)
+        let new_vars = List.map (fun _ -> new_ptype()) ts in
+        let lbls = assoc_keys ts in (* TODO projection with label not found*)
         let eqs = List.fold_left2
-          (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts inds in
-        let fields = List.fold_left2 
-          (fun acc l1 l2 -> (l1, l2) :: acc ) [] lbls inds in
+          (fun acc (_,t) i -> (gen_eq_r d e t i) @ acc) [] ts new_vars in
+        let fields = zip lbls new_vars in
         (ty, List.assoc s fields) :: eqs
       | Nat n, Var x ->
           let record_in_e = rm_gen (List.assoc (d - 1 - x) e) in
@@ -113,10 +156,14 @@ and gen_eq_r_Bop d e b t1 t2 ty =
               [ty, ty_x_gen]
           | _ -> failwith "TODO projection on variable which is not a record")
       | Lbl s, Var x ->
-          let record_in_e = rm_gen (List.assoc (d - 1 - x) e) in
+          let record_in_e = (try rm_gen (List.assoc (d - 1 - x) e) with
+                             | Not_found -> failwith "TODO prj on variable in environement not found")
+              in
           (match record_in_e with
           | Rcd ty_record  -> 
-              let ty_x = List.assoc s ty_record in
+              let ty_x = (try List.assoc s ty_record with
+                         | Not_found -> failwith "TODO prj on lbl in variable not found")
+              in
               let fvs = vars_of_type ty_x in
               let ty_x_gen = List.fold_left
                 (fun acc ty -> (Gen(ty, acc))) ty_x fvs in
@@ -146,7 +193,7 @@ and gen_eq_r_Let d e x t1 t2 ty =
     | Var x, Some ((_, ta) :: _ ) ->
         let fvs = vars_of_type ta in
         let ta = List.fold_left (fun acc ty -> (Gen(ty, acc))) ta fvs in
-        let eqs = gen_eq_r d ((- x -1, ta) :: e) t2 ty in
+        let eqs = gen_eq_r d ((d -1 - x, ta) :: e) t2 ty in
         eqs
     | _                   -> eraise (UntypeableLet (Let (x, t1, t2)))
 
