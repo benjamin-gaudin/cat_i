@@ -3,7 +3,7 @@ open Common.Type
 (* Check if a type occur in another type *)
 let rec occurCheck ty1 ty2 =
   match ty2 with
-  | Nat | Bol    -> false
+  | Cst _        -> false
   | Var _        -> ty1 = ty2
   | Lis tyl      -> occurCheck ty1 tyl
   | Rcd tys      -> List.exists (fun (_,ty) -> occurCheck ty1 ty) tys
@@ -14,8 +14,7 @@ let rec occurCheck ty1 ty2 =
 (* Substitute a type ty1 by a type ty2 in ty3 *)
 let rec subs_type ty1 ty2 ty3 =
   match ty3 with
-  | Bol              -> Bol
-  | Nat              -> Nat
+  | Cst cst          -> Cst cst
   | Var _            -> if ty1 = ty3 then ty2 else ty3
   | Lis tyl          -> if ty1 = ty3 then ty2 else Lis (subs_type ty1 ty2 tyl)
   | Rcd tys          -> 
@@ -34,19 +33,15 @@ let rec subs_equ ty ty' eq =
 
 let diff_consructor t1 t2 =
   match t1, t2 with
-  | (Gen _, _)  | (_, Gen _) | (Var _, _) | (_, Var _) | (Nat, Nat) |
-    (Bol, Bol) | (Lis _, Lis _) | (Arr _, Arr _) | (Rcd _, Rcd _) | 
-    (Vrt _, Vrt _) -> false
+  | (Gen _, _)  | (_, Gen _) | (Var _, _) | (_, Var _) | (Lis _, Lis _) | 
+    (Arr _, Arr _) | (Rcd _, Rcd _) | (Vrt _, Vrt _) -> false
+  | (Cst c1, Cst c2) when c1 = c2 -> false
   | _  -> true
-  (* | (Arr _, Nat) | (Nat, Arr _) | (Arr _, Lis _) | (Lis _, Arr _)
-    | (Nat, Lis _) | (Lis _, Nat) | (Bol, Nat) | (Bol, Arr _) 
-    | (Bol, Lis _) -> true
-  | _ -> false *)
 
 (* Step of a naive unification algorithm *)
 let rec uni_step eq goal =
   match eq with
-  | (ty1,     ty2) :: tail when ty1 = goal || ty2 = goal -> 
+  | (ty1,     ty2) :: tail when ty1 = goal || ty2 = goal ->
       Some (tail @ [(ty1, ty2)])
   | (Lis ty1, Lis ty2) :: tail -> Some ((ty1, ty2) :: tail)
   | (ty1,     ty2) :: tail when ty1 = ty2 -> Some tail

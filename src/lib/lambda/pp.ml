@@ -7,8 +7,9 @@ open Error
 
 let rec ttype fmt (t : ptype) =
 match t with
-  | Nat            -> fprintf fmt "Nat"
-  | Bol            -> fprintf fmt "Bool"
+  | Cst Uni        -> fprintf fmt "unit"
+  | Cst Nat        -> fprintf fmt "nat"
+  | Cst Bol        -> fprintf fmt "bool"
   | Var s          -> fprintf fmt "%s" s
   | Lis n          -> fprintf fmt "[%a]" ttype n
   | Rcd tys        -> fprintf fmt "{%a}" (pp_print_list ~pp_sep:colon rcdfieldt) tys

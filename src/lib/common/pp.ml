@@ -3,6 +3,7 @@ open Error
 open Ast
 
 let const fmt = function
+  | Uni -> fprintf fmt "()"
   | Nil -> fprintf fmt "[]"
   | Tru -> fprintf fmt "true"
   | Fal -> fprintf fmt "false"

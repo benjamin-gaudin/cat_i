@@ -39,7 +39,7 @@
 %left AS
 
 (* types *)
-%token NAT BOOL
+%token NAT BOOL UNIT
 
 (* Values *)
 %token TRUE FALSE
@@ -59,16 +59,18 @@ lbl_typ_list :
 | l=LBL COLON ty=ptype COMA ls=lbl_typ_list { (l, ty) :: ls }
 
 ptype:
-| NAT                            { Nat                }
-| BOOL                           { Bol                }
-| l=LBL                          { Gen (Var l ,Var l) }
-| LSBR ty=ptype RSBR             { Lis ty             }
-| LBRA tys=lbl_typ_list RBRA     { Rcd tys            }
-| LT tys=lbl_typ_list GT         { Vrt tys            }
-| FORALL ty1=ptype DOT ty2=ptype { Arr (ty1, ty2)     }
-| LPAR ty1=ptype RIGHT ty2=ptype RPAR      { Arr (ty1, ty2)     }
+| UNIT                                { Cst Uni            }
+| NAT                                 { Cst Nat            }
+| BOOL                                { Cst Bol            }
+| l=LBL                               { Gen (Var l ,Var l) }
+| LSBR ty=ptype RSBR                  { Lis ty             }
+| LBRA tys=lbl_typ_list RBRA          { Rcd tys            }
+| LT tys=lbl_typ_list GT              { Vrt tys            }
+| FORALL ty1=ptype DOT ty2=ptype      { Arr (ty1, ty2)     }
+| LPAR ty1=ptype RIGHT ty2=ptype RPAR { Arr (ty1, ty2)     }
 
 value:
+| LPAR RPAR  { Cst Uni }
 | IDI i=CNAT { Var i   }
 | n=CNAT     { Nat n   }
 | TRUE       { Cst Tru }

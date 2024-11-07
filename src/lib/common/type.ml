@@ -1,5 +1,6 @@
-type ptype = Nat
-           | Bol
+type cst = Nat | Bol | Uni
+
+type ptype = Cst of cst
            | Var of string
            | Lis of ptype
            | Rcd of (string * ptype) list

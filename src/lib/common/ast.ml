@@ -6,7 +6,7 @@ type uop  = Fix | HD | TL | Abs
 
 type bop  = App | And | Or | Add | Sub | Mul | Con | Prj
 
-type const = Nil | Tru | Fal
+type const = Nil | Tru | Fal | Uni
 
 type term = Cst of const
           | Lbl of string
