@@ -30,13 +30,13 @@ let bop fmt = function
   | Prj -> fprintf fmt "prj" (* TODO *)
 
 let nl fmt _ =
-  fprintf fmt "\n"
+  fprintf fmt "@ "
 
 let semi fmt _ =
-  fprintf fmt "; "
+  fprintf fmt ";@ "
 
 let colon fmt _ =
-  fprintf fmt ", "
+  fprintf fmt ",@ "
 
 let tab fmt _ =
   fprintf fmt "\t"

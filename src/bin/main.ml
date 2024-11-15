@@ -29,34 +29,40 @@ let from_file (f : string) =
 
 let print_equa t =
     try
-      printf "Equa        : %a\n" Pp.equas (Gen_equa.gen_equa t (Var "goal"))
+      printf "@{<bold>Equa@}        : \n";
+      printf "%a\n" Pp.equas (Gen_equa.gen_equa t (Var "goal"))
     with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
 
 let print_nf t =
   let t' = Reduction.norm t in
-  printf "Normal Form : ";
+  printf "@{<bold>Normal Form@} : ";
   match t' with
   | None    -> printf "Divergent (Timeout) \n"
   | Some t' -> printf "%a\n" Pp.term t'
 
 let print_type t =
+  printf "@{<bold>Type@}        :";
   try
     match Resolve.ptype_of_term t with
-    | None    -> printf "Type        : Untypeable\n"
-    | Some ty -> printf "Type        : %a\n" Pp.ttype ty
+    | None    -> printf "Untypeable\n"
+    | Some ty -> printf " %a\n" Pp.ttype ty
   with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
-  
+
+let print_term t =
+  printf "----------------\n" ;
+  printf "@{<bold>Term@}        :\n" ;
+  printf "%a\n" Pp.term t
 
 let test (t, options) =
   Options.set_list options;
-  printf "----------------\n" ;
-  printf "Term        : %a\n" Pp.term t;
+  print_term t;
   print_nf t;
   if !Options.eq then print_equa t else ();
-  print_type t
+  print_type t;
+  printf "@."
 
 let exec file =
-  eprintf "interpreting %s@." file;
+  printf "interpreting %s@." file;
   try
     let prog =  from_file file in
     List.iter test prog

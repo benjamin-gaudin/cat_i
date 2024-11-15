@@ -1,11 +1,12 @@
 - Seq
 
-- dont care of order in record (need subtyping)
-
-- Better parser
-- Match pattern
+- let pattern in
+- subtyping
+- dont care of order in record (need subtyping) (tuple XOR record)
+- Tests
 - Better message error
 - Recursive type
+- unitary tests
 
 - Option type list in (with indent pp)
 - Option equa list in

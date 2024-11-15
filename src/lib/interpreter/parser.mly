@@ -11,7 +11,6 @@
 %token RIGHT
 %token VBAR
 
-
 (* Operations *)
 %token PRJ
 %token DCOLON
@@ -21,13 +20,6 @@
 %token PLUS SUB STAR
 %token HD TL
 
-%left PLUS SUB
-%left STAR
-%left AND OR
-%left DCOLON
-%right PRJ
-%right RIGHT
-
 (* Keywords *)
 %token FIX
 %token LET IN
@@ -35,8 +27,6 @@
 %token CASE OF
 %token AS
 %token FORALL
-
-%left AS
 
 (* types *)
 %token NAT BOOL UNIT
@@ -48,6 +38,13 @@
 
 (* Options *)
 %token OPE
+
+(* Priorities *)
+%right PRJ
+%left AND OR
+%left PLUS SUB
+%left STAR
+%left DCOLON
 
 %start program
 %type <(term * opt list) list> program
