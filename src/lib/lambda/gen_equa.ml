@@ -204,6 +204,8 @@ and gen_eq_r_Cod d e co c t1 t2 ty =
       let eqs2 = gen_eq_r d e t2 ty in
       eqsc @ eqs1 @ eqs2
 
-let gen_equa t ty = try gen_eq_r 0 [] t ty with
-               | E e -> Pp.err Format.std_formatter e; []
+let gen_equa t ty = 
+  (* try  *)
+    gen_eq_r 0 [] t ty
+  (* with | E e -> Pp.err Format.std_formatter e; [] *)
 

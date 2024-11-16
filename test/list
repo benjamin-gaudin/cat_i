@@ -1,14 +1,14 @@
 // map
-// ifn i0 then [] else (i1 (HD i0)) :: (i2 (TL i0));;
+// _fn _0 then [] else (_1 (HD _0)) :: (_2 (TL _0));;
 
-// let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in i1;; e;
+// let _1 = (fix (λ λ λ ifn _0 then [] else (_1 (HD _0)) :: (_2 _1 (TL _0)))) in _1;; e;
 
-let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in
-let i0 = λ 2 * i0 in
-i1 i0 [5;10;2];;
+let _1 = (fix (λ λ λ ifn _0 then [] else (_1 (HD _0)) :: (_2 _1 (TL _0)))) in
+let _0 = λ 2 * _0 in
+_1 _0 [5;10;2];;
 
-// let i1 = (fix (λ λ λ ifn i0 then [] else (i1 (HD i0)) :: (i2 i1 (TL i0)))) in
-// let i0 = λ 2 * i0 in
-// let i2 = i1 i0 [10;2] in
-// HD TL i2;;
+// let _1 = (fix (λ λ λ ifn _0 then [] else (_1 (HD _0)) :: (_2 _1 (TL _0)))) in
+// let _0 = λ 2 * _0 in
+// let _2 = _1 _0 [10;2] in
+// HD TL _2;;
 
