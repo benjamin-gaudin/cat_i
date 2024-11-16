@@ -1,0 +1,18 @@
+let _0 = (λ _0 _0) (λ _0 _0) in _0;;
+fix 3 + 5;;
+_0;;
+π 10 (0, 1);;
+// π one {two = 2, three = 3};;
+// π one {one = 1, one = 1};;
+// (<one = 1, one = 1> as <one : nat, one : nat>);;
+π one 1;;
+π _0 {one = 1, two = 2};;
+case 1 of | <some> -> 1 | <none> -> 0;;
+case (<some = 1> as <some : nat, more : nat>) of | <some> -> 1 | <none> -> 0;;
+
+
+
+
+
+
+

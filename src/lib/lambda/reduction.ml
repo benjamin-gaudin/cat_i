@@ -1,4 +1,5 @@
 open Common.Ast
+open Error
 
 let rec lift_rec d t =
   match t with
@@ -94,10 +95,11 @@ and red_step_Bop = function
   | Bop (Sub, Nat m, Nat n) -> Some (Nat (m - n))
   | Bop (Mul, Nat m, Nat n) -> Some (Nat (m * n))
   | Bop (Prj, Nat n, Rcd ts) when n < List.length ts -> Some (List.nth ts n |> snd)
-  | Bop (Prj, Nat _, Rcd _) -> failwith "TODO projection with integer too high"
+  (* | Bop (Prj, Nat _, Rcd _) -> failwith "TODO projection with integer too high" *)
   | Bop (Prj, Lbl s, Rcd ts) -> 
-      (try Some (List.assoc s ts)
-       with Not_found -> failwith "TODO projection with label not found")
+      (try 
+        Some (List.assoc s ts)
+       with Not_found -> eraise (EPrjLabelNotFound (s, Rcd ts)))
   | Bop (App, Uop (Abs, t1), t2) when is_value t2 -> Some (subs t1 0 t2)
   | Bop (b,   t1,    t2   ) when not (is_value t1) -> 
       Option.bind (red_step t1) (fun t -> Some (Bop (b, t, t2)))

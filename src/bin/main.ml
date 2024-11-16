@@ -34,26 +34,27 @@ let print_equa t =
     with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
 
 let print_nf t =
-  let t' = Reduction.norm t in
-  printf "@{<bold>Normal Form@} : ";
-  match t' with
-  | None    -> printf "Divergent (Timeout)@."
-  | Some t' -> printf "%a@." Pp.term t'
+  try 
+    let t' = Reduction.norm t in
+    printf "@{<bold>Normal Form@} : ";
+    match t' with
+    | None    -> printf "Divergent (Timeout)@."
+    | Some t' -> printf "@[<hov 2>%a@]@." Pp.term t'
+  with Lambda.Error.E e ->
+    err "Reduction" Lambda.Pp.err e
 
 let print_type t =
-  printf "@{<bold>Type@}        :";
   try
     match Resolve.ptype_of_term t with
-    | None    -> printf "Untypeable@."
-    | Some ty -> printf " %a@." Pp.ttype ty
+    | None    -> printf "@{<bold>Type@}        : Untypeable@."
+    | Some ty -> printf "@{<bold>Type@}        : %a@." Pp.ttype ty
   with Lambda.Error.E e ->
     err "Typing" Lambda.Pp.err e
-    (* printf " Untypeable\n@{Typing Error :@}@.%a@." Lambda.Pp.err e *)
 
 let print_term t =
   printf "----------------\n" ;
   printf "@{<bold>Term@}        :@." ;
-  printf "@[<hov 2>  %a@]@." Pp.term t
+    printf "@[<hov 2>  %a@]@." Pp.term t
 
 let test (t, options) =
   Options.set_list options;
@@ -72,8 +73,6 @@ let exec file =
 
 let () =
     Colorsh.setup_std ();
-    (* pp_set_margin std_formatter 95; *)
-    pp_set_margin std_formatter 435;
     if Array.length argv < 2 then help () else
     let input = Array.sub argv 2 (Array.length argv - 2) in
     match argv.(1) with

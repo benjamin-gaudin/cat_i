@@ -31,14 +31,14 @@ let rec term fmt = function
       (pp_print_list ~pp_sep:colon rcdfieldv) ts
   | Vrt ts          -> fprintf fmt "<@[<hv>%a@]>"
       (pp_print_list ~pp_sep:colon rcdfieldv) ts
-  | Uop (u, t)      -> fprintf fmt "@[<hov 2>%a@ %a@]" uop u term t
-  | As  (t, ty)     -> fprintf fmt "@[<hov 2>%a as@ %a@]" term t ttype ty
-  | Bop (Prj, n, t) -> fprintf fmt "@[<hov 2>π %a@ %a@]" term n term t
+  | Uop (u, t)      -> fprintf fmt "%a@ %a" uop u term t
+  | As  (t, ty)     -> fprintf fmt "%a as@ %a" term t ttype ty
+  | Bop (Prj, n, t) -> fprintf fmt "π %a@ %a" term n term t
   | Bop (Con, t, ts)->
       fprintf fmt "@,[@[<h>%a@]]" (pp_print_list ~pp_sep:semi term)
         (list_of_tlist (Bop (Con, t,ts)))
   | Bop (b, t1, t2) -> fprintf fmt "(%a %a %a)" term t1 bop b term t2
-  | Let (x, t1, t2) -> fprintf fmt "@[<hv>let %a =@;<1 2>@[<hv 2>%a@]@ in@ @]%a"
+  | Let (x, t1, t2) -> fprintf fmt "@[<hv>let %a =@;<1 2>@[<hov 2>%a@]@ in@ @]%a"
       term x term t1 term t2
   | Cod (co, c, t1, t2) -> 
       fprintf fmt "@[<hv 2>%a %a then@ %a@ else %a@]"
@@ -63,13 +63,31 @@ let env_aux fmt t = fprintf fmt "%d : %a" (fst t) ttype (snd t)
 let env fmt t = fprintf fmt "%a" (pp_print_list env_aux) t
 
 let err fmt = function
-  | FVNotFound t ->
+  | EFVNotFound t ->
       fprintf fmt "The variable %a was not found" term t
-  | UntypeableLet t ->
-      fprintf fmt "The term :@ %a@ in the let in can't be typed" term t
-  | UntypeableFix t ->
-      fprintf fmt "Then term %a in a fix can't be typed" term t
-  | PrjOutOfBound t ->
-      fprintf fmt "Projection too far '%a'" term t
-  | PrjNotNat  t->
-      fprintf fmt "Projection firt argument need to be a number '%a'" term t
+  | EUntypeableLet t ->
+      fprintf fmt "@[<v 2>The term in the let in can't be typed :@ @[<hov 2>%a@]@]" 
+        term t
+  | EUntypeableFix t ->
+      fprintf fmt "@[<v 2>A fix need to start with an abstraction which is itself :@ @[<hov 2>%a@]@]" 
+        term t
+  | EPrjOutOfBound (v, t) ->
+      fprintf fmt "@[<v 2>Projection out of bound π %d :@ @[<hov 2>%a@]@]" v term t
+  | EPrjLabelNotFound (l, t) ->
+      fprintf fmt "@[<v 2>Projection with a label not found@ π %s @[<hov 2>%a@]@]" l term t
+  | EPrjNotVrt ts ->
+      fprintf fmt "@[<v 2>Projection on something which have not a record type :@ @[<hov 2>%a@]@]" 
+        term ts
+  | EPrjNotNatOrLbl (t1, t2) ->
+      fprintf fmt "@[<v 2>Projection with something with have not a type nat or label 
+        and on something which have not a record type@ π @[<hov 2>%a@]@] %a" term t1 term t2
+  | ELabelRcdUniq ts ->
+      fprintf fmt "@[<v 2>Labels are not unique in this record : :@ @[<hov 2>%a@]@]" term ts
+  | ELabelVrtUniq ts ->
+      fprintf fmt "@[<v 2>Labels are not unique in this variant : :@ @[<hov 2>%a@]@]" term ts
+  | ECaseNotVrt   t ->
+      fprintf fmt "@[<v 2>This term have not variant type :@ @[<hov 2>%a@]@]" term t
+  | ECaseNotSameVrt (t1, t2) ->
+      fprintf fmt "@[<v 2>This two variant have not the same fields:
+        t1 =@ @[<hov 2>%a@]@ 
+        t2 =@ @[<hov 2>%a@]@] " term t1 term t2
