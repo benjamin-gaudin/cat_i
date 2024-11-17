@@ -1,7 +1,9 @@
 // fact
-// fix (λ λ ifz _0 then 1 else _0 * (_1 (_0 - 1)));;
+fix (λ λ ifz _0 then 1 else _0 * (_1 (_0 - 1)));;
 
 // fact 5
-let _0 = fix (λ λ ifz _0 then 1 else _0 * (_1 (_0 - 1))) in
+let _0 =
+  fix (λ λ ifz _0 then 1 else _0 * (_1 (_0 - 1))) 
+in
 _0 5;;
 

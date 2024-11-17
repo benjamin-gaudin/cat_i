@@ -30,7 +30,7 @@ let from_file (f : string) =
 let print_equa t =
     try
       printf "@{<bold>Equa@}        :@.";
-      printf "  %a@." Pp.equas (Gen_equa.gen_equa t (Var "goal"))
+      printf "  %a@." Pp.equas_rn (Gen_equa.gen_equa t (Var "goal"))
     with Lambda.Error.E e -> Lambda.Pp.err std_formatter e
 
 let print_nf t =
@@ -47,14 +47,13 @@ let print_type t =
   try
     match Resolve.ptype_of_term t with
     | None    -> printf "@{<bold>Type@}        : Untypeable@."
-    | Some ty -> printf "@{<bold>Type@}        : %a@." Pp.ttype ty
+    | Some ty -> printf "@{<bold>Type@}        : %a@." Pp.ttype_rn ty
   with Lambda.Error.E e ->
     err "Typing" Lambda.Pp.err e
 
 let print_term t =
   printf "----------------\n" ;
-  printf "@{<bold>Term@}        :@." ;
-    printf "@[<hov 2>  %a@]@." Pp.term t
+  printf "@{<bold>Term@}        :@;@ @[<hov 2>  %a@]@." Pp.term t
 
 let test (t, options) =
   Options.set_list options;

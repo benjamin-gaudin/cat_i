@@ -22,6 +22,8 @@ and rcdfieldt fmt field =
   if l = "" then fprintf fmt "%a" ttype t
   else fprintf fmt "%s : %a" l ttype t
 
+let ttype_rn fmt (t : ptype) = let t = rn_ty t in ttype fmt t
+
 let rec term fmt = function
   | Cst c           -> fprintf fmt "%a" const c
   | Nat n           -> fprintf fmt "%d" n
@@ -58,6 +60,9 @@ and caseField fmt field =
 
 let equa fmt t = fprintf fmt "%a = %a" ttype (fst t) ttype (snd t)
 let equas fmt t = fprintf fmt "@[<v 2>%a@]" (pp_print_list equa) t
+let equas_rn fmt t =
+  let t = rn_eq t in
+  fprintf fmt "@[<v 2>%a@]" (pp_print_list equa) t
 
 let env_aux fmt t = fprintf fmt "%d : %a" (fst t) ttype (snd t)
 let env fmt t = fprintf fmt "%a" (pp_print_list env_aux) t
