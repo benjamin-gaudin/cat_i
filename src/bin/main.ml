@@ -11,7 +11,7 @@ let help () =
   eprintf "usage:\n";
   eprintf "    cat_i <command> <arguments>\n";
   eprintf "commands:\n";
-  eprintf "    exec\n";
+  eprintf "    exec     interpret the files\n";
   eprintf "    help@."
 
 let from_file (f : string) =
