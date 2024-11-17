@@ -1,14 +1,14 @@
 # 🐱 Classical Academic λ-Terms Interpreter
 
-Interpreter of λ calculus with some extensions.
-Use of a parser, some files in test directory show a bit of the syntax.
+An interpreter for λ calculus with some extensions.
+Use of a parser, some files in `test` directory show a bit of the syntax.
 
 ## Usage
 
-`cat_i [FILE]...`
+`cat_i exec [FILE]...`
 
-## Extensions and characteritics :
-- de Brujin index
+## Extensions and characteristics :
+- de Bruijn index
 - Call by value
 - Ascription
 - Fixpoint
@@ -19,9 +19,9 @@ Use of a parser, some files in test directory show a bit of the syntax.
 - Variant
   + match on variant
 - If then else construct
-  + If       (bool)
-  + If nil   (list)
-  + If zero  (nat)
+  + 'If'       (bool)
+  + 'If nil'   (list)
+  + 'If zero'  (nat)
 
 ## ⚖️  License
 
